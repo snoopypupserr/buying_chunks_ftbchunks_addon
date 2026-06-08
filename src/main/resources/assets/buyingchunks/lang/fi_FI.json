@@ -21,7 +21,7 @@
   "uc7core.claimshop.tooltip.position": "Tontti: [%s]",
   "uc7core.claimshop.tooltip.price": "Hinta: %s%s",
   "uc7core.claimshop.tooltip.click": "Osta painamalla vasenta hiiren painiketta!",
-  "uc7core.claimshop.error.chunklimit": "Your team has reached the chunk limit (%s) for shop '%s'!",
-  "uc7core.claimshop.chunklimit.set.success": "Team '%s' now has a chunk buy limit of %s.",
-  "uc7core.claimshop.chunklimit.remove.success": "Chunk buy limit for team '%s' removed."
+  "uc7core.claimshop.error.chunklimit": "Tiimisi osui tontti rajoitukseen (%s) kaupalle '%s'!",
+  "uc7core.claimshop.chunklimit.set.success": "Tiimin '%s' tontin osto rajoitus on nyt %s.",
+  "uc7core.claimshop.chunklimit.remove.success": "Tontin ostorajoitus tiimille '%s' on nyt poistettu."
 }
