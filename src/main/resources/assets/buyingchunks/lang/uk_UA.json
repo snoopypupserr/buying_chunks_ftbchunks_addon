@@ -21,7 +21,7 @@
   "uc7core.claimshop.tooltip.position": "Чанк: [%s]",
   "uc7core.claimshop.tooltip.price": "Ціна: %s%s",
   "uc7core.claimshop.tooltip.click": "ЛКМ, щоб купити!",
-  "uc7core.claimshop.error.chunklimit": "Your team has reached the chunk limit (%s) for shop '%s'!",
-  "uc7core.claimshop.chunklimit.set.success": "Team '%s' now has a chunk buy limit of %s.",
-  "uc7core.claimshop.chunklimit.remove.success": "Chunk buy limit for team '%s' removed."
+  "uc7core.claimshop.error.chunklimit": "Ваша команда досягла ліміту чанків (%s) для магазину '%s'!",
+  "uc7core.claimshop.chunklimit.set.success": "Команда '%s' тепер має ліміт на придбання чанків: %s.",
+  "uc7core.claimshop.chunklimit.remove.success": "Ліміт на придбання чанків для команди '%s' скасовано."
 }
