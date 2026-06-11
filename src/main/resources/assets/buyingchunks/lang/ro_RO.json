@@ -21,7 +21,7 @@
   "uc7core.claimshop.tooltip.position": "Bucata: [%s]",
   "uc7core.claimshop.tooltip.price": "Preț %s%s",
   "uc7core.claimshop.tooltip.click": "Click stânga pentru a cumpăra!",
-  "uc7core.claimshop.error.chunklimit": "Your team has reached the chunk limit (%s) for shop '%s'!",
-  "uc7core.claimshop.chunklimit.set.success": "Team '%s' now has a chunk buy limit of %s.",
-  "uc7core.claimshop.chunklimit.remove.success": "Chunk buy limit for team '%s' removed."
+  "uc7core.claimshop.error.chunklimit": "Echipa ta a ajuns la limita bucăților (%s) pentru magazin '%s'!",
+  "uc7core.claimshop.chunklimit.set.success": "Echipa'%s' are acum o limita de cumpărat bucăți %s.",
+  "uc7core.claimshop.chunklimit.remove.success": "Limita bucății pe echipa '%s' a fost scoasa."
 }
