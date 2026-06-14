@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks) implements CustomPacketPayload {
+public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks, ItemStack baseCost) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<SyncClaimShopPacket> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(BuyingChunks.MOD_ID, "sync_claim_shop"));
@@ -38,7 +38,6 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks) i
     }
 
     private static void encode(FriendlyByteBuf buf, SyncClaimShopPacket packet) {
-        // Create a copy to avoid ConcurrentModificationException
         Map<ChunkPos, ClaimShopEntry> copy = new HashMap<>(packet.forSaleChunks());
         buf.writeInt(copy.size());
         for (Map.Entry<ChunkPos, ClaimShopEntry> entry : copy.entrySet()) {
@@ -48,6 +47,8 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks) i
             buf.writeUtf(entry.getValue().getShopTeamName());
             buf.writeUUID(entry.getValue().getSellerUUID());
         }
+        // NEU: BaseCost mitsenden
+        writeItemStack(buf, packet.baseCost());
     }
 
     private static SyncClaimShopPacket decode(FriendlyByteBuf buf) {
@@ -61,11 +62,13 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks) i
             UUID sellerUUID = buf.readUUID();
             map.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID));
         }
-        return new SyncClaimShopPacket(map);
+        // NEU: BaseCost lesen
+        ItemStack baseCost = readItemStack(buf);
+        return new SyncClaimShopPacket(map, baseCost);
     }
 
     public static void handle(SyncClaimShopPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> ClientClaimShopData.update(packet.forSaleChunks()));
+        context.enqueueWork(() -> ClientClaimShopData.update(packet.forSaleChunks(), packet.baseCost()));
     }
 
     @Override

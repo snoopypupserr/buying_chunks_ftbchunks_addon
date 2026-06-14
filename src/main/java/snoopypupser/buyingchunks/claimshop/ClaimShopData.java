@@ -9,17 +9,114 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class ClaimShopData {
 
     private final Map<ChunkPos, ClaimShopEntry> forSaleChunks = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<UUID, ItemStack> teamPrices = new HashMap<>();
-    private final Map<UUID, Integer> teamChunkLimits = new HashMap<>();      // max Chunks pro kaufendes Team
-    private final Map<UUID, Map<UUID, Integer>> teamBoughtCounts = new HashMap<>(); // shopTeam -> (buyerTeam -> Anzahl)
+    private final Map<UUID, Integer> teamChunkLimits = new HashMap<>();
+    private final Map<UUID, Map<UUID, Integer>> teamBoughtCounts = new HashMap<>();
+
+    private boolean playerSellEnabled = false;
+    private final Set<UUID> playerIncomeDisabled = new HashSet<>();
+    private final Map<UUID, List<ItemStack>> pendingIncome = new HashMap<>();
+
+    private ItemStack baseCost = ItemStack.EMPTY;
+
+    private final Set<UUID> autoReclaimTeams = new HashSet<>();
+    private final Map<ChunkPos, UUID> chunkOriginalTeam = new HashMap<>();
+
+    // --- Auto-Reclaim ---
+
+    public void setAutoReclaim(UUID teamId, boolean enabled) {
+        if (enabled) {
+            autoReclaimTeams.add(teamId);
+        } else {
+            autoReclaimTeams.remove(teamId);
+        }
+    }
+
+    public boolean isAutoReclaimEnabled(UUID teamId) {
+        return autoReclaimTeams.contains(teamId);
+    }
+
+    public void setChunkOriginalTeam(ChunkPos pos, UUID teamId) {
+        chunkOriginalTeam.put(pos, teamId);
+    }
+
+    public UUID getChunkOriginalTeam(ChunkPos pos) {
+        return chunkOriginalTeam.get(pos);
+    }
+
+    public void removeChunkOriginalTeam(ChunkPos pos) {
+        chunkOriginalTeam.remove(pos);
+    }
+
+    public boolean hasChunkOriginalTeam(ChunkPos pos) {
+        return chunkOriginalTeam.containsKey(pos);
+    }
+
+    // --- Base Cost ---
+
+    public boolean hasBaseCost() {
+        return !baseCost.isEmpty();
+    }
+
+    public ItemStack getBaseCost() {
+        return baseCost.copy();
+    }
+
+    public void setBaseCost(Item item, int amount) {
+        this.baseCost = new ItemStack(item, amount);
+    }
+
+    public void removeBaseCost() {
+        this.baseCost = ItemStack.EMPTY;
+    }
+
+    // --- Player Sell Setting ---
+
+    public boolean isPlayerSellEnabled() {
+        return playerSellEnabled;
+    }
+
+    public void setPlayerSellEnabled(boolean enabled) {
+        this.playerSellEnabled = enabled;
+    }
+
+    // --- Player Income per Team ---
+
+    public boolean isPlayerIncomeEnabled(UUID teamId) {
+        return !playerIncomeDisabled.contains(teamId);
+    }
+
+    public void setPlayerIncomeEnabled(UUID teamId, boolean enabled) {
+        if (enabled) {
+            playerIncomeDisabled.remove(teamId);
+        } else {
+            playerIncomeDisabled.add(teamId);
+        }
+    }
+
+    // --- Pending Income ---
+
+    public void addPendingIncome(UUID sellerUUID, ItemStack stack) {
+        pendingIncome.computeIfAbsent(sellerUUID, k -> new ArrayList<>()).add(stack.copy());
+    }
+
+    public List<ItemStack> getPendingIncome(UUID sellerUUID) {
+        return pendingIncome.getOrDefault(sellerUUID, Collections.emptyList());
+    }
+
+    public void clearPendingIncome(UUID sellerUUID) {
+        pendingIncome.remove(sellerUUID);
+    }
+
+    public boolean hasPendingIncome(UUID sellerUUID) {
+        List<ItemStack> list = pendingIncome.get(sellerUUID);
+        return list != null && !list.isEmpty();
+    }
 
     // --- Chunk Shop ---
 
@@ -67,7 +164,6 @@ public class ClaimShopData {
 
     // --- Team Chunk Limits ---
 
-    /** Setzt das maximale Chunk-Kauflimit für ein Shop-Team. -1 = kein Limit. */
     public void setTeamChunkLimit(UUID shopTeamId, int limit) {
         teamChunkLimits.put(shopTeamId, limit);
     }
@@ -84,24 +180,21 @@ public class ClaimShopData {
         return teamChunkLimits.containsKey(shopTeamId);
     }
 
-    /** Wie viele Chunks hat buyerTeam bereits von shopTeam gekauft? */
     public int getBoughtCount(UUID shopTeamId, UUID buyerTeamId) {
         Map<UUID, Integer> counts = teamBoughtCounts.get(shopTeamId);
         if (counts == null) return 0;
         return counts.getOrDefault(buyerTeamId, 0);
     }
 
-    /** Zählt einen Kauf hoch. */
     public void incrementBoughtCount(UUID shopTeamId, UUID buyerTeamId) {
         teamBoughtCounts
                 .computeIfAbsent(shopTeamId, k -> new HashMap<>())
                 .merge(buyerTeamId, 1, Integer::sum);
     }
 
-    /** Prüft ob buyerTeam noch kaufen darf. */
     public boolean canBuy(UUID shopTeamId, UUID buyerTeamId) {
         int limit = getTeamChunkLimit(shopTeamId);
-        if (limit < 0) return true; // kein Limit gesetzt
+        if (limit < 0) return true;
         return getBoughtCount(shopTeamId, buyerTeamId) < limit;
     }
 
@@ -145,7 +238,6 @@ public class ClaimShopData {
         }
         tag.put("teamPrices", teamList);
 
-        // Limits speichern
         ListTag limitList = new ListTag();
         for (Map.Entry<UUID, Integer> entry : teamChunkLimits.entrySet()) {
             CompoundTag limitTag = new CompoundTag();
@@ -155,7 +247,6 @@ public class ClaimShopData {
         }
         tag.put("teamChunkLimits", limitList);
 
-        // Kaufzähler speichern
         ListTag countList = new ListTag();
         for (Map.Entry<UUID, Map<UUID, Integer>> shopEntry : teamBoughtCounts.entrySet()) {
             for (Map.Entry<UUID, Integer> buyerEntry : shopEntry.getValue().entrySet()) {
@@ -168,6 +259,49 @@ public class ClaimShopData {
         }
         tag.put("teamBoughtCounts", countList);
 
+        tag.putBoolean("playerSellEnabled", playerSellEnabled);
+
+        ListTag incomeDisabledList = new ListTag();
+        for (UUID id : playerIncomeDisabled) {
+            CompoundTag t = new CompoundTag();
+            t.putUUID("teamId", id);
+            incomeDisabledList.add(t);
+        }
+        tag.put("playerIncomeDisabled", incomeDisabledList);
+
+        ListTag pendingList = new ListTag();
+        for (Map.Entry<UUID, List<ItemStack>> entry : pendingIncome.entrySet()) {
+            for (ItemStack stack : entry.getValue()) {
+                CompoundTag pt = new CompoundTag();
+                pt.putUUID("sellerUUID", entry.getKey());
+                pt.put("item", saveItemStack(stack));
+                pendingList.add(pt);
+            }
+        }
+        tag.put("pendingIncome", pendingList);
+
+        if (!baseCost.isEmpty()) {
+            tag.put("baseCost", saveItemStack(baseCost));
+        }
+
+        ListTag autoReclaimList = new ListTag();
+        for (UUID id : autoReclaimTeams) {
+            CompoundTag t = new CompoundTag();
+            t.putUUID("teamId", id);
+            autoReclaimList.add(t);
+        }
+        tag.put("autoReclaimTeams", autoReclaimList);
+
+        ListTag originalTeamList = new ListTag();
+        for (Map.Entry<ChunkPos, UUID> entry : chunkOriginalTeam.entrySet()) {
+            CompoundTag t = new CompoundTag();
+            t.putInt("x", entry.getKey().x);
+            t.putInt("z", entry.getKey().z);
+            t.putUUID("teamId", entry.getValue());
+            originalTeamList.add(t);
+        }
+        tag.put("chunkOriginalTeam", originalTeamList);
+
         return tag;
     }
 
@@ -176,6 +310,11 @@ public class ClaimShopData {
         teamPrices.clear();
         teamChunkLimits.clear();
         teamBoughtCounts.clear();
+        playerIncomeDisabled.clear();
+        pendingIncome.clear();
+        baseCost = ItemStack.EMPTY;
+        autoReclaimTeams.clear();
+        chunkOriginalTeam.clear();
 
         ListTag chunkList = tag.getList("chunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < chunkList.size(); i++) {
@@ -210,9 +349,41 @@ public class ClaimShopData {
             UUID shopTeamId = countTag.getUUID("shopTeamId");
             UUID buyerTeamId = countTag.getUUID("buyerTeamId");
             int count = countTag.getInt("count");
-            teamBoughtCounts
-                    .computeIfAbsent(shopTeamId, k -> new HashMap<>())
-                    .put(buyerTeamId, count);
+            teamBoughtCounts.computeIfAbsent(shopTeamId, k -> new HashMap<>()).put(buyerTeamId, count);
+        }
+
+        if (tag.contains("playerSellEnabled")) {
+            playerSellEnabled = tag.getBoolean("playerSellEnabled");
+        }
+
+        ListTag incomeDisabledList = tag.getList("playerIncomeDisabled", Tag.TAG_COMPOUND);
+        for (int i = 0; i < incomeDisabledList.size(); i++) {
+            playerIncomeDisabled.add(incomeDisabledList.getCompound(i).getUUID("teamId"));
+        }
+
+        ListTag pendingList = tag.getList("pendingIncome", Tag.TAG_COMPOUND);
+        for (int i = 0; i < pendingList.size(); i++) {
+            CompoundTag pt = pendingList.getCompound(i);
+            UUID sellerUUID = pt.getUUID("sellerUUID");
+            ItemStack stack = loadItemStack(pt.getCompound("item"));
+            pendingIncome.computeIfAbsent(sellerUUID, k -> new ArrayList<>()).add(stack);
+        }
+
+        if (tag.contains("baseCost")) {
+            baseCost = loadItemStack(tag.getCompound("baseCost"));
+        }
+
+        ListTag autoReclaimList = tag.getList("autoReclaimTeams", Tag.TAG_COMPOUND);
+        for (int i = 0; i < autoReclaimList.size(); i++) {
+            autoReclaimTeams.add(autoReclaimList.getCompound(i).getUUID("teamId"));
+        }
+
+        ListTag originalTeamList = tag.getList("chunkOriginalTeam", Tag.TAG_COMPOUND);
+        for (int i = 0; i < originalTeamList.size(); i++) {
+            CompoundTag t = originalTeamList.getCompound(i);
+            ChunkPos pos = new ChunkPos(t.getInt("x"), t.getInt("z"));
+            UUID teamId = t.getUUID("teamId");
+            chunkOriginalTeam.put(pos, teamId);
         }
     }
 }

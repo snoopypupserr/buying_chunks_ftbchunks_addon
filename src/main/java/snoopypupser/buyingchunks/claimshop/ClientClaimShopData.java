@@ -1,5 +1,6 @@
 package snoopypupser.buyingchunks.claimshop;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -12,10 +13,30 @@ import java.util.Map;
 public class ClientClaimShopData {
 
     private static Map<ChunkPos, ClaimShopEntry> forSaleChunks = new HashMap<>();
+    private static ItemStack baseCost = ItemStack.EMPTY;
+    private static boolean dirty = false;
+    private static Runnable onUpdateCallback = null;
 
-    public static void update(Map<ChunkPos, ClaimShopEntry> data) {
+    public static void setOnUpdateCallback(Runnable callback) {
+        onUpdateCallback = callback;
+    }
+
+    public static void clearOnUpdateCallback() {
+        onUpdateCallback = null;
+    }
+
+    public static void update(Map<ChunkPos, ClaimShopEntry> data, ItemStack newBaseCost) {
         forSaleChunks = new HashMap<>(data);
+        baseCost = newBaseCost.copy();
         dirty = true;
+        if (onUpdateCallback != null) {
+            onUpdateCallback.run();
+            onUpdateCallback = null;
+        }
+    }
+
+    public static ItemStack getBaseCost() {
+        return baseCost;
     }
 
     public static boolean isForSale(ChunkPos pos) {
@@ -29,8 +50,6 @@ public class ClientClaimShopData {
     public static Map<ChunkPos, ClaimShopEntry> getAll() {
         return Collections.unmodifiableMap(forSaleChunks);
     }
-
-    private static boolean dirty = false;
 
     public static void markDirty() {
         dirty = true;

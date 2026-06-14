@@ -11,14 +11,20 @@ public class ClaimShopSync {
     public static void syncToAll(MinecraftServer server) {
         ServerLevel level = server.overworld();
         ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
-        SyncClaimShopPacket packet = new SyncClaimShopPacket(savedData.getData().getAllForSaleMap());
+        SyncClaimShopPacket packet = new SyncClaimShopPacket(
+                savedData.getData().getAllForSaleMap(),
+                savedData.getData().getBaseCost()
+        );
         PacketDistributor.sendToAllPlayers(packet);
     }
 
     public static void syncToPlayer(ServerPlayer player) {
-        ServerLevel level = (ServerLevel) player.level();
+        ServerLevel level = player.getServer().overworld();
         ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
-        SyncClaimShopPacket packet = new SyncClaimShopPacket(savedData.getData().getAllForSaleMap());
+        SyncClaimShopPacket packet = new SyncClaimShopPacket(
+                savedData.getData().getAllForSaleMap(),
+                savedData.getData().getBaseCost()
+        );
         PacketDistributor.sendToPlayer(player, packet);
     }
 }

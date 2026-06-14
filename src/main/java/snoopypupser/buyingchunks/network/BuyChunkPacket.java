@@ -33,46 +33,36 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
     public static final StreamCodec<FriendlyByteBuf, BuyChunkPacket> STREAM_CODEC =
             StreamCodec.of(BuyChunkPacket::encode, BuyChunkPacket::decode);
 
+    private static final UUID NO_SELLER = new UUID(0, 0);
+
     private static void encode(FriendlyByteBuf buf, BuyChunkPacket packet) {
-        buf.writeInt(packet.chunkX);
-        buf.writeInt(packet.chunkZ);
+        buf.writeInt(packet.chunkX());
+        buf.writeInt(packet.chunkZ());
     }
 
     private static BuyChunkPacket decode(FriendlyByteBuf buf) {
         return new BuyChunkPacket(buf.readInt(), buf.readInt());
     }
 
-    // Generic error sound (no team, server team, not for sale)
     private static void playGenericError(ServerPlayer player) {
         player.level().playSound(null, player.blockPosition(),
-                SoundEvents.VILLAGER_NO,
-                SoundSource.PLAYERS,
-                1.0f, 1.0f
-        );
+                SoundEvents.VILLAGER_NO, SoundSource.PLAYERS, 1.0f, 1.0f);
     }
 
-    // No money sound (heavy, dull feeling)
     private static void playNoMoneyError(ServerPlayer player) {
         player.level().playSound(null, player.blockPosition(),
-                SoundEvents.ANVIL_LAND,
-                SoundSource.PLAYERS,
-                0.5f, 1.5f
-        );
+                SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.5f, 1.5f);
     }
 
-    // Success sound (epic level up)
     private static void playSuccess(ServerPlayer player) {
         player.level().playSound(null, player.blockPosition(),
-                SoundEvents.PLAYER_LEVELUP,
-                SoundSource.PLAYERS,
-                0.5f, 1.0f
-        );
+                SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.5f, 1.0f);
     }
 
     public static void handle(BuyChunkPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
-            ServerLevel level = (ServerLevel) player.level();
+            ServerPlayer buyer = (ServerPlayer) context.player();
+            ServerLevel level = (ServerLevel) buyer.level();
             ChunkPos pos = new ChunkPos(packet.chunkX(), packet.chunkZ());
             ChunkDimPos dimPos = new ChunkDimPos(level.dimension(), pos);
 
@@ -80,16 +70,16 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             ClaimShopEntry entry = savedData.getData().getEntry(pos);
 
             if (entry == null) {
-                playGenericError(player);
-                player.sendSystemMessage(Component.translatable("uc7core.claimshop.error.notforsale"));
+                playGenericError(buyer);
+                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.notforsale"));
                 return;
             }
 
             ItemStack price = entry.getPrice();
 
-            if (!hasEnoughItems(player, price)) {
-                playNoMoneyError(player);
-                player.sendSystemMessage(Component.translatable(
+            if (!hasEnoughItems(buyer, price)) {
+                playNoMoneyError(buyer);
+                buyer.sendSystemMessage(Component.translatable(
                         "uc7core.claimshop.error.notenoughitems",
                         price.getCount(),
                         price.getItem().getDescription().getString()
@@ -97,34 +87,30 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                 return;
             }
 
-            Optional<Team> buyerTeam = FTBTeamsAPI.api().getManager().getTeamForPlayer(player);
-            if (buyerTeam.isEmpty()) {
-                playGenericError(player);
-                player.sendSystemMessage(Component.translatable("uc7core.claimshop.error.noteam"));
+            Optional<Team> buyerTeamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayer(buyer);
+            if (buyerTeamOpt.isEmpty()) {
+                playGenericError(buyer);
+                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.noteam"));
                 return;
             }
 
-            Team team = buyerTeam.get();
-            BuyingChunks.LOGGER.info("BuyChunk: buyer={} team={} isServer={}",
-                    player.getGameProfile().getName(), team.getName().getString(), team.isServerTeam());
-
-            if (team.isServerTeam()) {
-                playGenericError(player);
-                player.sendSystemMessage(Component.translatable("uc7core.claimshop.error.serverbuyerteam"));
+            Team buyerTeam = buyerTeamOpt.get();
+            if (buyerTeam.isServerTeam()) {
+                playGenericError(buyer);
+                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.serverbuyerteam"));
                 return;
             }
 
-            // Chunk-Limit prüfen
             Optional<Team> shopTeamOpt = FTBTeamsAPI.api().getManager().getTeams().stream()
                     .filter(t -> t.getName().getString().equals(entry.getShopTeamName()))
                     .findFirst();
 
             if (shopTeamOpt.isPresent()) {
                 UUID shopTeamId = shopTeamOpt.get().getId();
-                if (!savedData.getData().canBuy(shopTeamId, team.getId())) {
-                    playGenericError(player);
+                if (!savedData.getData().canBuy(shopTeamId, buyerTeam.getId())) {
+                    playGenericError(buyer);
                     int limit = savedData.getData().getTeamChunkLimit(shopTeamId);
-                    player.sendSystemMessage(Component.translatable(
+                    buyer.sendSystemMessage(Component.translatable(
                             "uc7core.claimshop.error.chunklimit",
                             limit,
                             entry.getShopTeamName()
@@ -137,39 +123,74 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             var existingChunk = manager.getChunk(dimPos);
             if (existingChunk != null) {
-                existingChunk.getTeamData().unclaim(
-                        player.createCommandSourceStack(), dimPos, false
-                );
+                existingChunk.getTeamData().unclaim(buyer.createCommandSourceStack(), dimPos, false);
             }
 
-            removeItems(player, price);
-
+            removeItems(buyer, price);
             savedData.getData().removeFromSale(pos);
 
-            // Kaufzähler erhöhen
             shopTeamOpt.ifPresent(shopTeam ->
-                    savedData.getData().incrementBoughtCount(shopTeam.getId(), team.getId())
+                    savedData.getData().incrementBoughtCount(shopTeam.getId(), buyerTeam.getId())
             );
+
+            // Auto-Reclaim: original Server-Team merken
+            shopTeamOpt.ifPresent(shopTeam -> {
+                if (shopTeam.isServerTeam() && savedData.getData().isAutoReclaimEnabled(shopTeam.getId())) {
+                    savedData.getData().setChunkOriginalTeam(pos, shopTeam.getId());
+                }
+            });
+
+            // Income: nur wenn kein Server-Team verkauft hat
+            UUID sellerUUID = entry.getSellerUUID();
+            boolean isServerTeamSale = shopTeamOpt.map(Team::isServerTeam).orElse(false);
+
+            if (!isServerTeamSale && sellerUUID != null && !sellerUUID.equals(NO_SELLER)) {
+                boolean incomeEnabled = shopTeamOpt
+                        .map(t -> savedData.getData().isPlayerIncomeEnabled(t.getId()))
+                        .orElse(true);
+
+                if (incomeEnabled) {
+                    ServerPlayer seller = buyer.getServer().getPlayerList().getPlayer(sellerUUID);
+                    if (seller != null) {
+                        giveOrDrop(seller, price.copy());
+                        seller.sendSystemMessage(Component.translatable(
+                                "uc7core.claimshop.income.received",
+                                price.getCount(),
+                                price.getItem().getDescription().getString(),
+                                buyer.getGameProfile().getName()
+                        ));
+                    } else {
+                        savedData.getData().addPendingIncome(sellerUUID, price.copy());
+                        BuyingChunks.LOGGER.info("ClaimShop: Seller {} is offline, queuing income {}x {}",
+                                sellerUUID, price.getCount(), price.getItem().getDescription().getString());
+                    }
+                }
+            }
 
             savedData.setDirty();
 
-            manager.getOrCreateData(team).claim(
-                    player.createCommandSourceStack(),
+            manager.getOrCreateData(buyerTeam).claim(
+                    buyer.createCommandSourceStack(),
                     dimPos,
                     false
             );
 
-            ClaimShopSync.syncToAll(player.getServer());
+            ClaimShopSync.syncToAll(buyer.getServer());
+            playSuccess(buyer);
 
-            playSuccess(player);
-
-            player.sendSystemMessage(Component.translatable(
+            buyer.sendSystemMessage(Component.translatable(
                     "uc7core.claimshop.buy.success",
                     pos.x, pos.z,
                     price.getCount(),
                     price.getItem().getDescription().getString()
             ));
         });
+    }
+
+    private static void giveOrDrop(ServerPlayer player, ItemStack stack) {
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
+        }
     }
 
     private static boolean hasEnoughItems(ServerPlayer player, ItemStack required) {
