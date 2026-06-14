@@ -1,7 +1,7 @@
 {
-  "uc7core.claimshop.set.success": "Chunk [%s, %s] is now for sale for %sx %s! (Shop: %s)",
-  "uc7core.claimshop.remove.success": "Chunk [%s, %s] is no longer for sale.",
-  "uc7core.claimshop.info.forsale": "Chunk [%s, %s] costs %sx %s. (Shop: %s)",
+  "uc7core.claimshop.set.success": "צ'אנק[%s,%s] עכשיו נמכר בשביל %sx %s! (חנות: %s)",
+  "uc7core.claimshop.remove.success": "צ'אנק[%s,%s] כבר לא נמכר.",
+  "uc7core.claimshop.info.forsale": "צ'אנק[%s,%s] עולה %sx, %s (חנות: %s)",
   "uc7core.claimshop.info.notforsale": "Chunk [%s, %s] is not for sale.",
   "uc7core.claimshop.error": "Error: %s",
   "uc7core.claimshop.error.notforsale": "This chunk is not for sale!",
