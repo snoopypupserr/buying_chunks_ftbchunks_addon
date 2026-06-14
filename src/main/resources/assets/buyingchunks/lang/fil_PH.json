@@ -20,5 +20,8 @@
   "uc7core.claimshop.tooltip.divider": "─────────────────────",
   "uc7core.claimshop.tooltip.position": "Chunk: [%s]",
   "uc7core.claimshop.tooltip.price": "Presyo: %s%s",
-  "uc7core.claimshop.tooltip.click": "Mag-left-click para bumili!"
+  "uc7core.claimshop.tooltip.click": "Mag-left-click para bumili!",
+  "uc7core.claimshop.error.chunklimit": "Ang iyong team has umabot na sa chunk limit (%s) sa tindahan '%s'!",
+  "uc7core.claimshop.chunklimit.set.success": "Ang Team '%s' ay mayroon na ngayong chunk buy limit na %s.",
+  "uc7core.claimshop.chunklimit.remove.success": "Ang limitasyon sa pag-bili ng Chunk para sa Team '%s' ay natanggal."
 }
