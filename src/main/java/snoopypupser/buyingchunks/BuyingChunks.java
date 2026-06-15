@@ -1,6 +1,7 @@
 package snoopypupser.buyingchunks;
 
 import com.mojang.logging.LogUtils;
+import dev.ftb.mods.ftbchunks.api.FTBChunksAPI;
 import dev.ftb.mods.ftbchunks.api.event.ClaimedChunkEvent;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
 import dev.ftb.mods.ftbteams.api.Team;
@@ -10,6 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
+import snoopypupser.buyingchunks.network.RefreshMapPacket;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -106,18 +109,22 @@ public class BuyingChunks {
                 LOGGER.info("BaseCost: Not enough items! Attempting unclaim...");
                 acc.failedChunks++;
 
-                player.getServer().execute(() -> {
-                    try {
-                        var manager = dev.ftb.mods.ftbchunks.api.FTBChunksAPI.api().getManager();
-                        var claimedChunk = manager.getChunk(chunk.getPos());
-                        if (claimedChunk != null) {
-                            var serverSource = player.getServer().createCommandSourceStack();
-                            claimedChunk.getTeamData().unclaim(serverSource, chunk.getPos(), false, false);
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("BaseCost: Unclaim error: {}", e.getMessage(), e);
+                // Fix #13: Unclaim synchronously so FTBChunks GUI doesn't count this as a
+                // successful claim. The previous server.execute() deferred the unclaim to
+                // the next tick, which caused the GUI to show "Chunks modified: X" even
+                // though the claim was immediately reversed.
+                try {
+                    var manager = FTBChunksAPI.api().getManager();
+                    var claimedChunk = manager.getChunk(chunk.getPos());
+                    if (claimedChunk != null) {
+                        var serverSource = player.getServer().createCommandSourceStack();
+                        claimedChunk.getTeamData().unclaim(serverSource, chunk.getPos(), false, false);
+                        // Force a map refresh on the client so the chunk visually reverts
+                        PacketDistributor.sendToPlayer(player, new RefreshMapPacket());
                     }
-                });
+                } catch (Exception e) {
+                    LOGGER.error("BaseCost: Unclaim error: {}", e.getMessage(), e);
+                }
             } else {
                 removeItems(player, cost);
                 acc.paidChunks++;
