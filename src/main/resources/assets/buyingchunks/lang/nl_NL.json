@@ -49,5 +49,5 @@
   "uc7core.claimshop.basecost.display.title": "Claim Cost",
   "uc7core.claimshop.basecost.display.per_chunk": "per Chunk",
   "uc7core.claimshop.basecost.paid.bulk": "You claimed %s chunks and paid a total of %sx %s.",
-  "uc7core.claimshop.basecost.notenough.bulk": "%s chunks could not be claimed! You would have needed %sx %s in total."
+  "uc7core.claimshop.basecost.notenough.bulk": ""
 }
