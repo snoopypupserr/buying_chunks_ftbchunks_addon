@@ -71,7 +71,7 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             if (entry == null) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.notforsale"));
+                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.notforsale")));
                 return;
             }
 
@@ -79,25 +79,25 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             if (!hasEnoughItems(buyer, price)) {
                 playNoMoneyError(buyer);
-                buyer.sendSystemMessage(Component.translatable(
+                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                         "uc7core.claimshop.error.notenoughitems",
                         price.getCount(),
                         price.getItem().getDescription().getString()
-                ));
+                )));
                 return;
             }
 
             Optional<Team> buyerTeamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayer(buyer);
             if (buyerTeamOpt.isEmpty()) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.noteam"));
+                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.noteam")));
                 return;
             }
 
             Team buyerTeam = buyerTeamOpt.get();
             if (buyerTeam.isServerTeam()) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(Component.translatable("uc7core.claimshop.error.serverbuyerteam"));
+                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.serverbuyerteam")));
                 return;
             }
 
@@ -110,11 +110,11 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                 if (!savedData.getData().canBuy(shopTeamId, buyerTeam.getId())) {
                     playGenericError(buyer);
                     int limit = savedData.getData().getTeamChunkLimit(shopTeamId);
-                    buyer.sendSystemMessage(Component.translatable(
+                    buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                             "uc7core.claimshop.error.chunklimit",
                             limit,
                             entry.getShopTeamName()
-                    ));
+                    )));
                     return;
                 }
             }
@@ -153,12 +153,12 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                     ServerPlayer seller = buyer.getServer().getPlayerList().getPlayer(sellerUUID);
                     if (seller != null) {
                         giveOrDrop(seller, price.copy());
-                        seller.sendSystemMessage(Component.translatable(
+                        seller.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                                 "uc7core.claimshop.income.received",
                                 price.getCount(),
                                 price.getItem().getDescription().getString(),
                                 buyer.getGameProfile().getName()
-                        ));
+                        )));
                     } else {
                         savedData.getData().addPendingIncome(sellerUUID, price.copy());
                         BuyingChunks.LOGGER.info("ClaimShop: Seller {} is offline, queuing income {}x {}",
@@ -178,12 +178,12 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             ClaimShopSync.syncToAll(buyer.getServer());
             playSuccess(buyer);
 
-            buyer.sendSystemMessage(Component.translatable(
+            buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                     "uc7core.claimshop.buy.success",
                     pos.x, pos.z,
                     price.getCount(),
                     price.getItem().getDescription().getString()
-            ));
+            )));
         });
     }
 

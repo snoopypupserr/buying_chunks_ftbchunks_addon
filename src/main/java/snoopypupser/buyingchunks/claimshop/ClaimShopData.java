@@ -162,6 +162,18 @@ public class ClaimShopData {
         return Collections.unmodifiableMap(teamPrices);
     }
 
+    public Map<UUID, Integer> getAllTeamChunkLimits() {
+        return Collections.unmodifiableMap(teamChunkLimits);
+    }
+
+    public Set<UUID> getPlayerIncomeDisabledSet() {
+        return Collections.unmodifiableSet(playerIncomeDisabled);
+    }
+
+    public Set<UUID> getAutoReclaimTeamsSet() {
+        return Collections.unmodifiableSet(autoReclaimTeams);
+    }
+
     // --- Team Chunk Limits ---
 
     public void setTeamChunkLimit(UUID shopTeamId, int limit) {

@@ -34,6 +34,9 @@ bin/
 
 ### Minecraft Modding ###
 run/
+
+### Development Artifacts ###
+dev/
 !**/src/**/run/
 **/src/generated/**/.cache/
 repo/

@@ -1,18 +1,17 @@
 package snoopypupser.buyingchunks;
 
 import com.mojang.logging.LogUtils;
-import dev.ftb.mods.ftbchunks.api.FTBChunksAPI;
 import dev.ftb.mods.ftbchunks.api.event.ClaimedChunkEvent;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
 import dev.ftb.mods.ftbteams.api.Team;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
-import snoopypupser.buyingchunks.network.RefreshMapPacket;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -23,6 +22,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.slf4j.Logger;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEventHandler;
+import snoopypupser.buyingchunks.event.ChunkEnterHandler;
 import snoopypupser.buyingchunks.claimshop.ClaimShopSavedData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopSync;
 import snoopypupser.buyingchunks.command.ClaimShopCommand;
@@ -36,6 +36,15 @@ public class BuyingChunks {
 
     public static final String MOD_ID = "buyingchunks";
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    public static Component prefix(Component message) {
+        return Component.literal("FTB SHOP ")
+                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x5DADE2)))
+                .append(Component.literal("➤ ")
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xA0A0A0))))
+                .append(message.copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFFFF))));
+    }
+
 
     // Accumulator: pro Spieler sammeln wir paid/failed Chunks über einen Tick
     private static final Map<UUID, ClaimAccumulator> pendingMessages = new ConcurrentHashMap<>();
@@ -56,6 +65,7 @@ public class BuyingChunks {
     public BuyingChunks(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(new ChunkEnterHandler());
         new ClaimShopEventHandler().register();
         BuyingChunksNetwork.register(modEventBus);
         LOGGER.info("Buying Chunks is loading...");
@@ -109,22 +119,18 @@ public class BuyingChunks {
                 LOGGER.info("BaseCost: Not enough items! Attempting unclaim...");
                 acc.failedChunks++;
 
-                // Fix #13: Unclaim synchronously so FTBChunks GUI doesn't count this as a
-                // successful claim. The previous server.execute() deferred the unclaim to
-                // the next tick, which caused the GUI to show "Chunks modified: X" even
-                // though the claim was immediately reversed.
-                try {
-                    var manager = FTBChunksAPI.api().getManager();
-                    var claimedChunk = manager.getChunk(chunk.getPos());
-                    if (claimedChunk != null) {
-                        var serverSource = player.getServer().createCommandSourceStack();
-                        claimedChunk.getTeamData().unclaim(serverSource, chunk.getPos(), false, false);
-                        // Force a map refresh on the client so the chunk visually reverts
-                        PacketDistributor.sendToPlayer(player, new RefreshMapPacket());
+                player.getServer().execute(() -> {
+                    try {
+                        var manager = dev.ftb.mods.ftbchunks.api.FTBChunksAPI.api().getManager();
+                        var claimedChunk = manager.getChunk(chunk.getPos());
+                        if (claimedChunk != null) {
+                            var serverSource = player.getServer().createCommandSourceStack();
+                            claimedChunk.getTeamData().unclaim(serverSource, chunk.getPos(), false, false);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("BaseCost: Unclaim error: {}", e.getMessage(), e);
                     }
-                } catch (Exception e) {
-                    LOGGER.error("BaseCost: Unclaim error: {}", e.getMessage(), e);
-                }
+                });
             } else {
                 removeItems(player, cost);
                 acc.paidChunks++;
@@ -146,19 +152,19 @@ public class BuyingChunks {
 
                         if (finalAcc.paidChunks == 1) {
                             // Einzelner Chunk: normale Nachricht
-                            player.sendSystemMessage(Component.translatable(
+                            player.sendSystemMessage(prefix(Component.translatable(
                                     "uc7core.claimshop.basecost.paid",
                                     finalAcc.cost.getCount(),
                                     finalAcc.cost.getItem().getDescription().getString()
-                            ));
+                            )));
                         } else {
                             // Mehrere Chunks: zusammengefasst
-                            player.sendSystemMessage(Component.translatable(
+                            player.sendSystemMessage(prefix(Component.translatable(
                                     "uc7core.claimshop.basecost.paid.bulk",
                                     finalAcc.paidChunks,
                                     totalCost,
                                     finalAcc.cost.getItem().getDescription().getString()
-                            ));
+                            )));
                         }
                     }
 
@@ -167,18 +173,18 @@ public class BuyingChunks {
                                 SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.5f, 1.5f);
 
                         if (finalAcc.failedChunks == 1) {
-                            player.sendSystemMessage(Component.translatable(
+                            player.sendSystemMessage(prefix(Component.translatable(
                                     "uc7core.claimshop.basecost.notenough",
                                     finalAcc.cost.getCount(),
                                     finalAcc.cost.getItem().getDescription().getString()
-                            ));
+                            )));
                         } else {
-                            player.sendSystemMessage(Component.translatable(
+                            player.sendSystemMessage(prefix(Component.translatable(
                                     "uc7core.claimshop.basecost.notenough.bulk",
                                     finalAcc.failedChunks,
                                     finalAcc.failedChunks * finalAcc.cost.getCount(),
                                     finalAcc.cost.getItem().getDescription().getString()
-                            ));
+                            )));
                         }
                     }
                 });
@@ -212,10 +218,10 @@ public class BuyingChunks {
             }
 
             int totalItems = pending.stream().mapToInt(ItemStack::getCount).sum();
-            player.sendSystemMessage(Component.translatable(
+            player.sendSystemMessage(prefix(Component.translatable(
                     "uc7core.claimshop.income.pending",
                     totalItems
-            ));
+            )));
 
             savedData.getData().clearPendingIncome(player.getUUID());
             savedData.setDirty();

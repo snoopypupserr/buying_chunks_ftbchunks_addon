@@ -148,11 +148,11 @@ public class ClaimShopEventHandler {
         if (!hasEnoughItems(player, price)) {
             BuyingChunks.LOGGER.info("CLAIM: Not enough items, unclaiming chunk {}.", chunk.getPos());
             chunk.getTeamData().unclaim(source, chunk.getPos(), true);
-            player.sendSystemMessage(Component.translatable(
+            player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                     "uc7core.claimshop.error.notenoughitems",
                     price.getCount(),
                     price.getItem().getDescription().getString()
-            ));
+            )));
             return;
         }
 
@@ -160,11 +160,11 @@ public class ClaimShopEventHandler {
         BuyingChunks.LOGGER.info("CLAIM: Removed {}x {} from player {}.",
                 price.getCount(), price.getItem().getDescriptionId(), player.getGameProfile().getName());
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                 "uc7core.claimshop.teamprice.paid",
                 price.getCount(),
                 price.getItem().getDescription().getString()
-        ));
+        )));
     }
 
     private boolean hasEnoughItems(ServerPlayer player, ItemStack required) {
