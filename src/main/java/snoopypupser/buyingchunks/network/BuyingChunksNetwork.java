@@ -18,10 +18,30 @@ public class BuyingChunksNetwork {
                 SyncClaimShopPacket.STREAM_CODEC,
                 SyncClaimShopPacket::handle
         );
+        registrar.playToClient(
+                SyncAdminDataPacket.TYPE,
+                SyncAdminDataPacket.STREAM_CODEC,
+                SyncAdminDataPacket::handle
+        );
+        registrar.playToClient(
+                OpenAdminScreenPacket.TYPE,
+                OpenAdminScreenPacket.STREAM_CODEC,
+                OpenAdminScreenPacket::handle
+        );
+        registrar.playToClient(
+                TeamListRefreshPacket.TYPE,
+                TeamListRefreshPacket.STREAM_CODEC,
+                TeamListRefreshPacket::handle
+        );
         registrar.playToServer(
                 BuyChunkPacket.TYPE,
                 BuyChunkPacket.STREAM_CODEC,
                 BuyChunkPacket::handle
+        );
+        registrar.playToServer(
+                AdminActionPacket.TYPE,
+                AdminActionPacket.STREAM_CODEC,
+                AdminActionPacket::handle
         );
     }
 }
