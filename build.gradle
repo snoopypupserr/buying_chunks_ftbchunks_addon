@@ -138,6 +138,8 @@ dependencies {
     // NEU
     compileOnly "dev.architectury:architectury-neoforge:13.0.8"
     localRuntime "dev.architectury:architectury-neoforge:13.0.8"
+
+    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
