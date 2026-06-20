@@ -205,6 +205,7 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             savedData.setDirty();
 
+            BuyingChunks.markShopClaim(pos);
             manager.getOrCreateData(buyerTeam).claim(
                     buyer.createCommandSourceStack(),
                     dimPos,

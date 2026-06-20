@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -45,6 +46,17 @@ public class BuyingChunks {
                 .append(message.copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFFFF))));
     }
 
+
+    // Shop-Käufe markieren, damit AFTER_CLAIM (Base Cost) sie überspringt
+    private static final Set<ChunkPos> pendingShopClaims = ConcurrentHashMap.newKeySet();
+
+    public static void markShopClaim(ChunkPos pos) {
+        pendingShopClaims.add(pos);
+    }
+
+    public static boolean consumeShopClaim(ChunkPos pos) {
+        return pendingShopClaims.remove(pos);
+    }
 
     // Accumulator: pro Spieler sammeln wir paid/failed Chunks über einen Tick
     private static final Map<UUID, ClaimAccumulator> pendingMessages = new ConcurrentHashMap<>();
@@ -101,6 +113,11 @@ public class BuyingChunks {
             Team claimingTeam = chunk.getTeamData().getTeam();
             if (claimingTeam.isServerTeam()) {
                 LOGGER.info("BaseCost: Chunk claimed by server team '{}', skipping.", claimingTeam.getName().getString());
+                return;
+            }
+
+            if (consumeShopClaim(chunk.getPos().chunkPos())) {
+                LOGGER.info("BaseCost: Chunk purchased through shop, skipping base cost.");
                 return;
             }
 
