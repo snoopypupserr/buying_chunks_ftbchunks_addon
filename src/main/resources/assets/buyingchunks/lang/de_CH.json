@@ -51,6 +51,22 @@
   "uc7core.claimshop.basecost.paid.bulk": "You claimed %s chunks and paid a total of %sx %s.",
   "uc7core.claimshop.basecost.notenough.bulk": "%s chunks could not be claimed! You would have needed %sx %s in total.",
 
+  "uc7core.claimshop.sale.notification": "Dyn Chunk [%s, %s] isch vom %s kauft worde!",
+  "uc7core.claimshop.toast.listed.title": "Chunk zum Verchauf igstellt",
+  "uc7core.claimshop.toast.listed.body": "Chunk [%s, %s] für %sx %s",
+  "uc7core.claimshop.wilderness": "~ Wildnis ~",
+  "uc7core.claimshop.mylistings.title": "Dyni Listings:",
+  "uc7core.claimshop.mylistings.none": "Keni aktive Listings.",
+  "uc7core.claimshop.mylistings.pending": "Uustehendi Iinnahme: %sx %s warted uf Abholig",
+  "uc7core.claimshop.quickbuy.enabled": "Quickbuy aktiviert! De Bestätigigsbildschirm wird übersprunge.",
+  "uc7core.claimshop.quickbuy.disabled": "Quickbuy deaktiviert! De Bestätigigsbildschirm wird azeigt.",
+  "uc7core.claimshop.info.teamprice": "Team-Priis: %sx %s pro Claim",
+  "uc7core.claimshop.info.shoplimit": "Shop-Limit: %s/%s kauft",
+  "uc7core.claimshop.info.basecost": "Basiskoschte: %sx %s pro Claim",
+  "uc7core.claimshop.list.none": "Keni Chunks gfunde.",
+  "uc7core.claimshop.list.header": "Zeig %s vo %s Listings:",
+  "uc7core.claimshop.list.more": "... und %s wiiteri.",
+
   "key.buyingchunks.buy": "Chunck chaufe",
   "key.categories.buyingchunks": "Buying Chunks"
 }
