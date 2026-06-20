@@ -124,6 +124,10 @@ public class ClaimShopData {
         forSaleChunks.put(pos, new ClaimShopEntry(price.copy(), shopTeamName, sellerUUID));
     }
 
+    public void setForSale(ChunkPos pos, ItemStack price, String shopTeamName, UUID sellerUUID, int teamColor) {
+        forSaleChunks.put(pos, new ClaimShopEntry(price.copy(), shopTeamName, sellerUUID, teamColor));
+    }
+
     public void removeFromSale(ChunkPos pos) {
         forSaleChunks.remove(pos);
     }
@@ -204,6 +208,14 @@ public class ClaimShopData {
                 .merge(buyerTeamId, 1, Integer::sum);
     }
 
+    public Map<UUID, Map<UUID, Integer>> getAllTeamBoughtCounts() {
+        Map<UUID, Map<UUID, Integer>> copy = new HashMap<>();
+        for (Map.Entry<UUID, Map<UUID, Integer>> e : teamBoughtCounts.entrySet()) {
+            copy.put(e.getKey(), new HashMap<>(e.getValue()));
+        }
+        return copy;
+    }
+
     public boolean canBuy(UUID shopTeamId, UUID buyerTeamId) {
         int limit = getTeamChunkLimit(shopTeamId);
         if (limit < 0) return true;
@@ -237,6 +249,7 @@ public class ClaimShopData {
             chunkTag.put("price", saveItemStack(entry.getValue().getPrice()));
             chunkTag.putString("shopTeamName", entry.getValue().getShopTeamName());
             chunkTag.putUUID("sellerUUID", entry.getValue().getSellerUUID());
+            chunkTag.putInt("teamColor", entry.getValue().getTeamColor());
             chunkList.add(chunkTag);
         }
         tag.put("chunks", chunkList);
@@ -336,7 +349,8 @@ public class ClaimShopData {
             ItemStack price = loadItemStack(chunkTag.getCompound("price"));
             String shopTeamName = chunkTag.getString("shopTeamName");
             UUID sellerUUID = chunkTag.getUUID("sellerUUID");
-            forSaleChunks.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID));
+            int teamColor = chunkTag.contains("teamColor") ? chunkTag.getInt("teamColor") : 0xFFFFFF;
+            forSaleChunks.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID, teamColor));
         }
 
         ListTag teamList = tag.getList("teamPrices", Tag.TAG_COMPOUND);

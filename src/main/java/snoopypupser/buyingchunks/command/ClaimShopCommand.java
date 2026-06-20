@@ -7,6 +7,7 @@ import dev.ftb.mods.ftbchunks.api.ClaimedChunkManager;
 import dev.ftb.mods.ftbchunks.api.FTBChunksAPI;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
 import dev.ftb.mods.ftbteams.api.Team;
+import dev.ftb.mods.ftbteams.api.property.TeamProperties;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -96,9 +97,16 @@ public class ClaimShopCommand {
             Optional<Team> team = FTBTeamsAPI.api().getManager().getTeamForPlayer(player);
             String shopTeamName = team.map(t -> t.getName().getString())
                     .orElse(player.getGameProfile().getName());
+            int teamColor = team.map(t -> t.getProperty(TeamProperties.COLOR).rgb() & 0xFFFFFF)
+                    .orElse(0xFFFFFF);
+
+            if (savedData.getData().isForSale(chunkPos)) {
+                source.sendFailure(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.alreadyforsale")));
+                return 0;
+            }
 
             ItemStack price = new ItemStack(item, amount);
-            savedData.getData().setForSale(chunkPos, price, shopTeamName, player.getUUID());
+            savedData.getData().setForSale(chunkPos, price, shopTeamName, player.getUUID(), teamColor);
             savedData.setDirty();
             ClaimShopSync.syncToAll(player.getServer());
 

@@ -17,7 +17,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks, ItemStack baseCost) implements CustomPacketPayload {
+public record SyncClaimShopPacket(
+        ResourceLocation dimension,
+        Map<ChunkPos, ClaimShopEntry> forSaleChunks,
+        ItemStack baseCost,
+        Map<UUID, Integer> teamChunkLimits,
+        Map<UUID, Map<UUID, Integer>> teamBoughtCounts
+) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<SyncClaimShopPacket> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(BuyingChunks.MOD_ID, "sync_claim_shop"));
@@ -38,6 +44,7 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks, I
     }
 
     private static void encode(FriendlyByteBuf buf, SyncClaimShopPacket packet) {
+        buf.writeResourceLocation(packet.dimension());
         Map<ChunkPos, ClaimShopEntry> copy = new HashMap<>(packet.forSaleChunks());
         buf.writeInt(copy.size());
         for (Map.Entry<ChunkPos, ClaimShopEntry> entry : copy.entrySet()) {
@@ -46,12 +53,29 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks, I
             writeItemStack(buf, entry.getValue().getPrice());
             buf.writeUtf(entry.getValue().getShopTeamName());
             buf.writeUUID(entry.getValue().getSellerUUID());
+            buf.writeInt(entry.getValue().getTeamColor());
         }
-        // NEU: BaseCost mitsenden
         writeItemStack(buf, packet.baseCost());
+
+        buf.writeInt(packet.teamChunkLimits().size());
+        for (Map.Entry<UUID, Integer> e : packet.teamChunkLimits().entrySet()) {
+            buf.writeUUID(e.getKey());
+            buf.writeInt(e.getValue());
+        }
+
+        buf.writeInt(packet.teamBoughtCounts().size());
+        for (Map.Entry<UUID, Map<UUID, Integer>> shop : packet.teamBoughtCounts().entrySet()) {
+            buf.writeUUID(shop.getKey());
+            buf.writeInt(shop.getValue().size());
+            for (Map.Entry<UUID, Integer> buyer : shop.getValue().entrySet()) {
+                buf.writeUUID(buyer.getKey());
+                buf.writeInt(buyer.getValue());
+            }
+        }
     }
 
     private static SyncClaimShopPacket decode(FriendlyByteBuf buf) {
+        ResourceLocation dimension = buf.readResourceLocation();
         int size = buf.readInt();
         Map<ChunkPos, ClaimShopEntry> map = new HashMap<>();
         for (int i = 0; i < size; i++) {
@@ -60,15 +84,36 @@ public record SyncClaimShopPacket(Map<ChunkPos, ClaimShopEntry> forSaleChunks, I
             ItemStack price = readItemStack(buf);
             String shopTeamName = buf.readUtf();
             UUID sellerUUID = buf.readUUID();
-            map.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID));
+            int teamColor = buf.readInt();
+            map.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID, teamColor));
         }
-        // NEU: BaseCost lesen
         ItemStack baseCost = readItemStack(buf);
-        return new SyncClaimShopPacket(map, baseCost);
+
+        int limitSize = buf.readInt();
+        Map<UUID, Integer> limits = new HashMap<>();
+        for (int i = 0; i < limitSize; i++) {
+            limits.put(buf.readUUID(), buf.readInt());
+        }
+
+        int boughtSize = buf.readInt();
+        Map<UUID, Map<UUID, Integer>> bought = new HashMap<>();
+        for (int i = 0; i < boughtSize; i++) {
+            UUID shopId = buf.readUUID();
+            int innerSize = buf.readInt();
+            Map<UUID, Integer> inner = new HashMap<>();
+            for (int j = 0; j < innerSize; j++) {
+                inner.put(buf.readUUID(), buf.readInt());
+            }
+            bought.put(shopId, inner);
+        }
+
+        return new SyncClaimShopPacket(dimension, map, baseCost, limits, bought);
     }
 
     public static void handle(SyncClaimShopPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> ClientClaimShopData.update(packet.forSaleChunks(), packet.baseCost()));
+        context.enqueueWork(() -> ClientClaimShopData.update(
+                packet.dimension(), packet.forSaleChunks(), packet.baseCost(),
+                packet.teamChunkLimits(), packet.teamBoughtCounts()));
     }
 
     @Override

@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import snoopypupser.buyingchunks.BuyingChunks;
+import dev.ftb.mods.ftbteams.api.property.TeamProperties;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -118,14 +119,22 @@ public class ClaimShopEventHandler {
             return;
         }
 
+        ChunkPos chunkPos = chunk.getPos().chunkPos();
+        if (savedData.getData().isForSale(chunkPos)) {
+            BuyingChunks.LOGGER.info("CLAIM: Chunk {} already for sale, skipping auto-listing.", chunkPos);
+            return;
+        }
+
         // Server-Team: direkt zum Verkauf stellen, kein Spieler nötig
         if (claimTeam.isServerTeam()) {
             BuyingChunks.LOGGER.info("CLAIM: Server team, setting chunk for sale automatically.");
+            int teamColor = claimTeam.getProperty(TeamProperties.COLOR).rgb() & 0xFFFFFF;
             savedData.getData().setForSale(
                     chunk.getPos().chunkPos(),
                     price.copy(),
                     claimTeam.getName().getString(),
-                    NO_SELLER
+                    NO_SELLER,
+                    teamColor
             );
             savedData.setDirty();
             source.getServer().execute(() -> ClaimShopSync.syncToAll(source.getServer()));
