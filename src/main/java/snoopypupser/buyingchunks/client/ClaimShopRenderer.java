@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
@@ -22,6 +23,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import snoopypupser.buyingchunks.claimshop.ClientClaimShopData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
 import snoopypupser.buyingchunks.network.BuyChunkPacket;
+
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 import java.util.Map;
 
@@ -138,14 +142,25 @@ public class ClaimShopRenderer {
     }
     
     private void drawSmallArrow(GuiGraphics graphics, int x, int y, int color) {
-        // Kleiner grüner Pfeil nach unten (▼)
-        graphics.fill(x, y + 1, x + 3, y + 2, color);      // Top horizontal
-        graphics.fill(x + 1, y + 2, x + 4, y + 3, color);  // Middle horizontal
-        graphics.fill(x + 2, y + 3, x + 5, y + 4, color);  // Bottom horizontal
+        graphics.fill(x, y + 1, x + 3, y + 2, color);
+        graphics.fill(x + 1, y + 2, x + 4, y + 3, color);
+        graphics.fill(x + 2, y + 3, x + 5, y + 4, color);
+    }
+
+    private static int countItems(net.minecraft.world.entity.player.Player player, ItemStack required) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            if (ItemStack.isSameItem(stack, required)) {
+                count += stack.getCount();
+                if (count >= required.getCount()) break;
+            }
+        }
+        return count;
     }
 
     private void onLargeMapIcons(MapIconEvent event) {
-        for (Map.Entry<ChunkPos, ClaimShopEntry> entry : ClientClaimShopData.getAll().entrySet()) {
+        ResourceKey<Level> dimKey = event.getDimension();
+        for (Map.Entry<ChunkPos, ClaimShopEntry> entry : ClientClaimShopData.getAllForDimension(dimKey.location()).entrySet()) {
             ChunkPos pos = entry.getKey();
             ClaimShopEntry shopEntry = entry.getValue();
 
@@ -153,14 +168,21 @@ public class ClaimShopRenderer {
 
             final int chunkX = pos.x;
             final int chunkZ = pos.z;
+            final ResourceLocation dim = dimKey.location();
 
             event.add(new MapIcon.SimpleMapIcon(iconPos, SHOP_ICON) {
                 @Override
                 public void addTooltip(TooltipList list) {
+                    Minecraft mc = Minecraft.getInstance();
+
                     list.add(Component.literal("⭐ ")
                             .withStyle(Style.EMPTY.withColor(COLOR_GOLD))
                             .append(Component.translatable("uc7core.claimshop.tooltip.title")
                                     .withStyle(Style.EMPTY.withColor(COLOR_GOLD).withBold(true))));
+
+                    list.add(Component.literal("   ")
+                            .append(Component.literal(shopEntry.getShopTeamName())
+                                    .withStyle(Style.EMPTY.withColor(shopEntry.getTeamColor() & 0xFFFFFF))));
 
                     list.add(Component.translatable("uc7core.claimshop.tooltip.divider")
                             .withStyle(Style.EMPTY.withColor(COLOR_GRAY)));
@@ -179,6 +201,19 @@ public class ClaimShopRenderer {
                                     Component.literal(shopEntry.getPrice().getItem().getDescription().getString())
                                             .withStyle(Style.EMPTY.withColor(COLOR_GREEN)))));
 
+                    if (mc.player != null) {
+                        int count = countItems(mc.player, shopEntry.getPrice());
+                        int needed = shopEntry.getPrice().getCount();
+                        int invColor = count >= needed ? COLOR_GREEN : 0xFFE53935;
+                        list.add(Component.literal("📦 ")
+                                .withStyle(Style.EMPTY.withColor(COLOR_GRAY))
+                                .append(Component.translatable("uc7core.claimshop.tooltip.inventory",
+                                        Component.literal(String.valueOf(count))
+                                                .withStyle(Style.EMPTY.withColor(invColor).withBold(true)),
+                                        Component.literal(shopEntry.getPrice().getItem().getDescription().getString())
+                                                .withStyle(Style.EMPTY.withColor(invColor)))));
+                    }
+
                     list.add(Component.translatable("uc7core.claimshop.tooltip.divider")
                             .withStyle(Style.EMPTY.withColor(COLOR_GRAY)));
 
@@ -194,7 +229,7 @@ public class ClaimShopRenderer {
                 public boolean onMousePressed(BaseScreen screen, MouseButton button) {
                     if (button.isLeft()) {
                         Minecraft mc = Minecraft.getInstance();
-                        ClaimShopEntry entry = ClientClaimShopData.getEntry(new ChunkPos(chunkX, chunkZ));
+                        ClaimShopEntry entry = ClientClaimShopData.getEntry(dim, new ChunkPos(chunkX, chunkZ));
                         if (entry != null) {
                             mc.setScreen(new BuyChunkConfirmScreen(chunkX, chunkZ, entry, mc.screen));
                         }
