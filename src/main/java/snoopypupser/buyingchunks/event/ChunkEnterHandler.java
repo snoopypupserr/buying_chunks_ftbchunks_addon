@@ -38,7 +38,7 @@ public class ChunkEnterHandler {
 
         Component message;
         if (claimed == null) {
-            message = Component.literal("~ Wilderness ~")
+            message = Component.translatable("uc7core.claimshop.wilderness")
                     .withStyle(ChatFormatting.RED, ChatFormatting.ITALIC);
         } else {
             Team team = claimed.getTeamData().getTeam();

@@ -26,6 +26,7 @@ public class ClaimShopData {
 
     private final Set<UUID> autoReclaimTeams = new HashSet<>();
     private final Map<ChunkPos, UUID> chunkOriginalTeam = new HashMap<>();
+    private final Set<UUID> quickbuyPlayers = new HashSet<>();
 
     // --- Auto-Reclaim ---
 
@@ -222,6 +223,22 @@ public class ClaimShopData {
         return getBoughtCount(shopTeamId, buyerTeamId) < limit;
     }
 
+    // --- Quickbuy ---
+
+    public boolean toggleQuickbuy(UUID playerId) {
+        if (quickbuyPlayers.contains(playerId)) {
+            quickbuyPlayers.remove(playerId);
+            return false;
+        } else {
+            quickbuyPlayers.add(playerId);
+            return true;
+        }
+    }
+
+    public boolean isQuickbuyEnabled(UUID playerId) {
+        return quickbuyPlayers.contains(playerId);
+    }
+
     // --- NBT Save/Load ---
 
     private static CompoundTag saveItemStack(ItemStack stack) {
@@ -327,6 +344,14 @@ public class ClaimShopData {
         }
         tag.put("chunkOriginalTeam", originalTeamList);
 
+        ListTag quickbuyList = new ListTag();
+        for (UUID id : quickbuyPlayers) {
+            CompoundTag t = new CompoundTag();
+            t.putUUID("playerId", id);
+            quickbuyList.add(t);
+        }
+        tag.put("quickbuyPlayers", quickbuyList);
+
         return tag;
     }
 
@@ -340,6 +365,7 @@ public class ClaimShopData {
         baseCost = ItemStack.EMPTY;
         autoReclaimTeams.clear();
         chunkOriginalTeam.clear();
+        quickbuyPlayers.clear();
 
         ListTag chunkList = tag.getList("chunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < chunkList.size(); i++) {
@@ -410,6 +436,11 @@ public class ClaimShopData {
             ChunkPos pos = new ChunkPos(t.getInt("x"), t.getInt("z"));
             UUID teamId = t.getUUID("teamId");
             chunkOriginalTeam.put(pos, teamId);
+        }
+
+        ListTag quickbuyList = tag.getList("quickbuyPlayers", Tag.TAG_COMPOUND);
+        for (int i = 0; i < quickbuyList.size(); i++) {
+            quickbuyPlayers.add(quickbuyList.getCompound(i).getUUID("playerId"));
         }
     }
 }

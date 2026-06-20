@@ -179,9 +179,15 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                         .map(t -> savedData.getData().isPlayerIncomeEnabled(t.getId()))
                         .orElse(true);
 
-                if (incomeEnabled) {
-                    ServerPlayer seller = buyer.getServer().getPlayerList().getPlayer(sellerUUID);
-                    if (seller != null) {
+                ServerPlayer seller = buyer.getServer().getPlayerList().getPlayer(sellerUUID);
+                if (seller != null) {
+                    seller.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
+                            "uc7core.claimshop.sale.notification",
+                            pos.x, pos.z,
+                            buyer.getGameProfile().getName()
+                    )));
+
+                    if (incomeEnabled) {
                         giveOrDrop(seller, price.copy());
                         seller.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                                 "uc7core.claimshop.income.received",
@@ -189,11 +195,11 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                                 price.getItem().getDescription().getString(),
                                 buyer.getGameProfile().getName()
                         )));
-                    } else {
-                        savedData.getData().addPendingIncome(sellerUUID, price.copy());
-                        BuyingChunks.LOGGER.info("ClaimShop: Seller {} is offline, queuing income {}x {}",
-                                sellerUUID, price.getCount(), price.getItem().getDescription().getString());
                     }
+                } else if (incomeEnabled) {
+                    savedData.getData().addPendingIncome(sellerUUID, price.copy());
+                    BuyingChunks.LOGGER.info("ClaimShop: Seller {} is offline, queuing income {}x {}",
+                            sellerUUID, price.getCount(), price.getItem().getDescription().getString());
                 }
             }
 

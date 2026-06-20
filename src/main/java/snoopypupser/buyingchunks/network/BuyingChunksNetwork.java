@@ -48,5 +48,15 @@ public class BuyingChunksNetwork {
                 BuyErrorPacket.STREAM_CODEC,
                 BuyErrorPacket::handle
         );
+        registrar.playToClient(
+                ListingToastPacket.TYPE,
+                ListingToastPacket.STREAM_CODEC,
+                ListingToastPacket::handle
+        );
+        registrar.playToClient(
+                QuickbuySyncPacket.TYPE,
+                QuickbuySyncPacket.STREAM_CODEC,
+                QuickbuySyncPacket::handle
+        );
     }
 }

@@ -16,6 +16,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.lwjgl.glfw.GLFW;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
 import snoopypupser.buyingchunks.claimshop.ClientClaimShopData;
+import snoopypupser.buyingchunks.network.BuyChunkPacket;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -106,7 +108,13 @@ public class BuyableChunkOverlay {
             if (System.currentTimeMillis() - lastClickTime < CLICK_COOLDOWN_MS) return;
             lastClickTime = System.currentTimeMillis();
             Minecraft mc = Minecraft.getInstance();
-            mc.setScreen(new BuyChunkConfirmScreen(currentChunk.x, currentChunk.z, currentEntry, mc.screen));
+            if (ClientClaimShopData.isQuickbuyEnabled()) {
+                PacketDistributor.sendToServer(new BuyChunkPacket(currentChunk.x, currentChunk.z));
+                currentChunk = null;
+                currentEntry = null;
+            } else {
+                mc.setScreen(new BuyChunkConfirmScreen(currentChunk.x, currentChunk.z, currentEntry, mc.screen));
+            }
         }
     }
 
@@ -231,7 +239,13 @@ public class BuyableChunkOverlay {
             if (System.currentTimeMillis() - lastClickTime < CLICK_COOLDOWN_MS) return true;
             lastClickTime = System.currentTimeMillis();
             Minecraft mc = Minecraft.getInstance();
-            mc.setScreen(new BuyChunkConfirmScreen(currentChunk.x, currentChunk.z, currentEntry, mc.screen));
+            if (ClientClaimShopData.isQuickbuyEnabled()) {
+                PacketDistributor.sendToServer(new BuyChunkPacket(currentChunk.x, currentChunk.z));
+                currentChunk = null;
+                currentEntry = null;
+            } else {
+                mc.setScreen(new BuyChunkConfirmScreen(currentChunk.x, currentChunk.z, currentEntry, mc.screen));
+            }
             return true;
         }
         return false;

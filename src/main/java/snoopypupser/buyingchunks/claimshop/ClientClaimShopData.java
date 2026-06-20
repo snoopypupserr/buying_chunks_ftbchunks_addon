@@ -81,6 +81,16 @@ public class ClientClaimShopData {
         return counts != null ? counts.getOrDefault(buyerTeamId, 0) : 0;
     }
 
+    private static boolean quickbuyEnabled = false;
+
+    public static void setQuickbuyEnabled(boolean enabled) {
+        quickbuyEnabled = enabled;
+    }
+
+    public static boolean isQuickbuyEnabled() {
+        return quickbuyEnabled;
+    }
+
     public static void markDirty() {
         dirty = true;
     }

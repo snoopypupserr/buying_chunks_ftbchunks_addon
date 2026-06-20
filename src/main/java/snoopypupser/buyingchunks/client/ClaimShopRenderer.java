@@ -231,7 +231,11 @@ public class ClaimShopRenderer {
                         Minecraft mc = Minecraft.getInstance();
                         ClaimShopEntry entry = ClientClaimShopData.getEntry(dim, new ChunkPos(chunkX, chunkZ));
                         if (entry != null) {
-                            mc.setScreen(new BuyChunkConfirmScreen(chunkX, chunkZ, entry, mc.screen));
+                            if (ClientClaimShopData.isQuickbuyEnabled()) {
+                                PacketDistributor.sendToServer(new BuyChunkPacket(chunkX, chunkZ));
+                            } else {
+                                mc.setScreen(new BuyChunkConfirmScreen(chunkX, chunkZ, entry, mc.screen));
+                            }
                         }
                         return true;
                     }
