@@ -22,6 +22,7 @@
   "uc7core.claimshop.tooltip.position": "Chunk: [%s]",
   "uc7core.claimshop.tooltip.price": "Preis: %s%s",
   "uc7core.claimshop.tooltip.click": "Linksklick zum Kaufen!",
+  "uc7core.claimshop.tooltip.inventory": "Inventar: %sx %s",
   "uc7core.claimshop.error.chunklimit": "Dein Team hat das Chunk-Limit (%s) für Shop '%s' erreicht!",
   "uc7core.claimshop.chunklimit.set.success": "Team '%s' hat jetzt ein Chunk-Kauflimit von %s.",
   "uc7core.claimshop.chunklimit.remove.success": "Chunk-Kauflimit für Team '%s' entfernt.",
@@ -43,9 +44,16 @@
   "uc7core.claimshop.confirm.title": "Kauf bestätigen",
   "uc7core.claimshop.confirm.chunk": "Chunk: %s, %s",
   "uc7core.claimshop.confirm.price": "Preis: %sx %s",
+  "uc7core.claimshop.confirm.inventory": "Im Inventar: %sx %s",
+  "uc7core.claimshop.confirm.limit": "Shop-Limit: %s/%s (%s)",
   "uc7core.claimshop.confirm.question": "Bist du sicher?",
   "uc7core.claimshop.confirm.buy": "✔ Kaufen",
   "uc7core.claimshop.confirm.cancel": "✖ Abbrechen",
+
+  "uc7core.claimshop.overlay.hint": "zum Kaufen",
+  "uc7core.claimshop.overlay.buy": "Kaufen",
+  "uc7core.claimshop.overlay.cantafford": "Nicht genug",
+  "uc7core.claimshop.overlay.basecost": "Basis: %sx %s",
   "uc7core.claimshop.basecost.display.title": "Claim Kosten",
   "uc7core.claimshop.basecost.display.per_chunk": "pro Chunk",
   "uc7core.claimshop.basecost.paid.bulk": "Du hast %s Chunks geclaimt und insgesamt %sx %s bezahlt.",
@@ -159,5 +167,12 @@
   "uc7core.claimshop.admin.item_field.tip": "Gib eine Item-ID ein (z.B. minecraft:diamond)",
   "uc7core.claimshop.admin.amount_field.tip": "Gib die Anzahl der benötigten Items ein",
   "uc7core.claimshop.admin.team_field.tip": "Tippe, um nach einem Team zu suchen",
-  "uc7core.claimshop.admin.limit_field.tip": "Maximale Anzahl an Chunks, die dieses Team kaufen kann"
+  "uc7core.claimshop.admin.limit_field.tip": "Maximale Anzahl an Chunks, die dieses Team kaufen kann",
+
+  "uc7core.claimshop.error.alreadyforsale": "Dieser Chunk ist bereits zum Verkauf!",
+  "uc7core.claimshop.error.ownchunk": "Du kannst deinen eigenen Chunk nicht kaufen!",
+  "uc7core.claimshop.error.ownteamchunk": "Dein Team besitzt diesen Chunk bereits!",
+
+  "key.buyingchunks.buy": "Chunk kaufen",
+  "key.categories.buyingchunks": "Buying Chunks"
 }

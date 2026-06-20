@@ -22,6 +22,7 @@
   "uc7core.claimshop.tooltip.position": "Chunk: [%s]",
   "uc7core.claimshop.tooltip.price": "Price: %s%s",
   "uc7core.claimshop.tooltip.click": "Left-click to buy!",
+  "uc7core.claimshop.tooltip.inventory": "Inventory: %sx %s",
   "uc7core.claimshop.error.chunklimit": "Your team has reached the chunk limit (%s) for shop '%s'!",
   "uc7core.claimshop.chunklimit.set.success": "Team '%s' now has a chunk buy limit of %s.",
   "uc7core.claimshop.chunklimit.remove.success": "Chunk buy limit for team '%s' removed.",
@@ -43,9 +44,16 @@
   "uc7core.claimshop.confirm.title": "Confirm Purchase",
   "uc7core.claimshop.confirm.chunk": "Chunk: %s, %s",
   "uc7core.claimshop.confirm.price": "Price: %sx %s",
+  "uc7core.claimshop.confirm.inventory": "In inventory: %sx %s",
+  "uc7core.claimshop.confirm.limit": "Shop limit: %s/%s (%s)",
   "uc7core.claimshop.confirm.question": "Are you sure?",
   "uc7core.claimshop.confirm.buy": "✔ Buy",
   "uc7core.claimshop.confirm.cancel": "✖ Cancel",
+
+  "uc7core.claimshop.overlay.hint": "to buy",
+  "uc7core.claimshop.overlay.buy": "Buy",
+  "uc7core.claimshop.overlay.cantafford": "Can't afford",
+  "uc7core.claimshop.overlay.basecost": "Base: %sx %s",
   "uc7core.claimshop.basecost.display.title": "Claim Cost",
   "uc7core.claimshop.basecost.display.per_chunk": "per Chunk",
   "uc7core.claimshop.basecost.paid.bulk": "You claimed %s chunks and paid a total of %sx %s.",
@@ -53,6 +61,9 @@
 
   "uc7core.claimshop.error.nopermission": "You do not have permission to use this!",
   "uc7core.claimshop.error.invalid_item": "Invalid item: %s",
+  "uc7core.claimshop.error.alreadyforsale": "This chunk is already for sale!",
+  "uc7core.claimshop.error.ownchunk": "You cannot buy your own chunk!",
+  "uc7core.claimshop.error.ownteamchunk": "Your team already owns this chunk!",
 
   "uc7core.claimshop.admin.title": "Admin Dashboard",
   "uc7core.claimshop.admin.basecost": "Base Cost",
@@ -162,5 +173,8 @@
   "uc7core.claimshop.admin.item_field.tip": "Enter an item ID (e.g. minecraft:diamond)",
   "uc7core.claimshop.admin.amount_field.tip": "Enter the number of items required",
   "uc7core.claimshop.admin.team_field.tip": "Type to search for a team by name",
-  "uc7core.claimshop.admin.limit_field.tip": "Maximum number of chunks this team can buy"
+  "uc7core.claimshop.admin.limit_field.tip": "Maximum number of chunks this team can buy",
+
+  "key.buyingchunks.buy": "Buy Chunk",
+  "key.categories.buyingchunks": "Buying Chunks"
 }
