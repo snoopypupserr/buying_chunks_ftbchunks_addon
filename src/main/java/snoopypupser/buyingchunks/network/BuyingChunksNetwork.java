@@ -58,5 +58,10 @@ public class BuyingChunksNetwork {
                 QuickbuySyncPacket.STREAM_CODEC,
                 QuickbuySyncPacket::handle
         );
+        registrar.playToClient(
+                OpenMainDashboardScreenPacket.TYPE,
+                OpenMainDashboardScreenPacket.STREAM_CODEC,
+                OpenMainDashboardScreenPacket::handle
+        );
     }
 }

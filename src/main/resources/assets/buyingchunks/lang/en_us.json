@@ -190,6 +190,22 @@
   "uc7core.claimshop.admin.team_field.tip": "Type to search for a team by name",
   "uc7core.claimshop.admin.limit_field.tip": "Maximum number of chunks this team can buy",
 
+  "uc7core.claimshop.dashboard.title": "FTB Shop",
+  "uc7core.claimshop.dashboard.chunkinfo": "Current Chunk",
+  "uc7core.claimshop.dashboard.sell": "Sell Chunk",
+  "uc7core.claimshop.dashboard.sell.prompt": "Select item...",
+  "uc7core.claimshop.dashboard.mylistings": "My Listings",
+  "uc7core.claimshop.dashboard.alllistings": "All Listings",
+  "uc7core.claimshop.dashboard.quickbuy": "Quickbuy",
+  "uc7core.claimshop.dashboard.close": "Close",
+  "uc7core.claimshop.dashboard.close.tip": "Close the shop dashboard",
+  "uc7core.claimshop.sell.title": "Sell Chunk",
+  "uc7core.claimshop.sell.sell_btn": "Sell",
+  "uc7core.claimshop.sell.sell_btn.tip": "List this chunk for sale",
+  "uc7core.claimshop.listings.all.title": "All Listings",
+  "uc7core.claimshop.listings.mine.title": "My Listings",
+  "uc7core.claimshop.listings.remove.tip": "Remove this listing",
+
   "key.buyingchunks.buy": "Buy Chunk",
   "key.categories.buyingchunks": "Buying Chunks"
 }

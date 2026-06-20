@@ -28,6 +28,7 @@ import snoopypupser.buyingchunks.claimshop.ClaimShopSavedData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopSync;
 import snoopypupser.buyingchunks.network.ListingToastPacket;
 import snoopypupser.buyingchunks.network.OpenAdminScreenPacket;
+import snoopypupser.buyingchunks.network.OpenMainDashboardScreenPacket;
 import snoopypupser.buyingchunks.network.QuickbuySyncPacket;
 import snoopypupser.buyingchunks.network.SyncAdminDataPacket;
 
@@ -39,12 +40,13 @@ public class ClaimShopCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
         dispatcher.register(
                 Commands.literal("ftbshop")
+                        .executes(ctx -> openDashboard(ctx.getSource()))
 
                         .then(Commands.literal("help")
-                                .executes(ctx -> help(ctx.getSource()))
+                                .executes(ctx -> openDashboard(ctx.getSource()))
                         )
 
-                        .then(Commands.literal("set")
+                        .then(Commands.literal("sell")
                                 .then(Commands.argument("item", ResourceArgument.resource(context, Registries.ITEM))
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, 64))
                                                 .executes(ctx -> setForSale(
@@ -57,7 +59,16 @@ public class ClaimShopCommand {
                         )
 
                         .then(Commands.literal("remove")
-                                .executes(ctx -> removeFromSale(ctx.getSource()))
+                                .executes(ctx -> removeFromSale(ctx.getSource(), null))
+                                .then(Commands.argument("x", IntegerArgumentType.integer())
+                                        .then(Commands.argument("z", IntegerArgumentType.integer())
+                                                .executes(ctx -> removeFromSale(ctx.getSource(),
+                                                        new ChunkPos(
+                                                                IntegerArgumentType.getInteger(ctx, "x"),
+                                                                IntegerArgumentType.getInteger(ctx, "z")
+                                                        )))
+                                        )
+                                )
                         )
 
                         .then(Commands.literal("info")
@@ -78,10 +89,8 @@ public class ClaimShopCommand {
                                 .executes(ctx -> myListings(ctx.getSource()))
                         )
 
-                        .then(Commands.literal("toggle")
-                                .then(Commands.literal("quickbuy")
-                                        .executes(ctx -> toggleQuickbuy(ctx.getSource()))
-                                )
+                        .then(Commands.literal("quickbuy")
+                                .executes(ctx -> toggleQuickbuy(ctx.getSource()))
                         )
 
                         .then(Commands.literal("admin")
@@ -157,11 +166,11 @@ public class ClaimShopCommand {
         }
     }
 
-    private static int removeFromSale(CommandSourceStack source) {
+    private static int removeFromSale(CommandSourceStack source, ChunkPos explicitPos) {
         try {
             ServerPlayer player = source.getPlayerOrException();
             ServerLevel level = (ServerLevel) player.level();
-            ChunkPos chunkPos = new ChunkPos(player.blockPosition());
+            ChunkPos chunkPos = explicitPos != null ? explicitPos : new ChunkPos(player.blockPosition());
 
             ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
             boolean isAdmin = source.hasPermission(2);
@@ -272,31 +281,13 @@ public class ClaimShopCommand {
         }
     }
 
-    private static int help(CommandSourceStack source) {
+    private static int openDashboard(CommandSourceStack source) {
         try {
             ServerPlayer player = source.getPlayerOrException();
-            source.sendSuccess(() -> BuyingChunks.prefix(Component.literal("Available commands:")), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop help")
-                    .copy().append(Component.literal(" - Show this help").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop set <item> <amount>")
-                    .copy().append(Component.literal(" - List a chunk for sale").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop remove")
-                    .copy().append(Component.literal(" - Remove your chunk listing").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop info")
-                    .copy().append(Component.literal(" - Show chunk info").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop list [<item>]")
-                    .copy().append(Component.literal(" - List all for-sale chunks, optionally filter by item").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop mylistings")
-                    .copy().append(Component.literal(" - Show your listings and pending income").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            source.sendSuccess(() -> Component.literal("  /ftbshop toggle quickbuy")
-                    .copy().append(Component.literal(" - Skip the confirm screen when buying").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            if (source.hasPermission(2)) {
-                source.sendSuccess(() -> Component.literal("  /ftbshop admin")
-                        .copy().append(Component.literal(" - Open admin dashboard").withStyle(net.minecraft.ChatFormatting.GRAY)), false);
-            }
+            PacketDistributor.sendToPlayer(player, new OpenMainDashboardScreenPacket());
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Error: " + e.getMessage()));
+            source.sendFailure(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error", e.getMessage())));
             return 0;
         }
     }

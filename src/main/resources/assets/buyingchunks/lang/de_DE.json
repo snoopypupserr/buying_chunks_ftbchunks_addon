@@ -188,6 +188,22 @@
   "uc7core.claimshop.list.header": "Zeige %s von %s Listings:",
   "uc7core.claimshop.list.more": "... und %s weitere.",
 
+  "uc7core.claimshop.dashboard.title": "FTB Shop",
+  "uc7core.claimshop.dashboard.chunkinfo": "Aktueller Chunk",
+  "uc7core.claimshop.dashboard.sell": "Chunk verkaufen",
+  "uc7core.claimshop.dashboard.sell.prompt": "Item auswählen...",
+  "uc7core.claimshop.dashboard.mylistings": "Meine Listings",
+  "uc7core.claimshop.dashboard.alllistings": "Alle Listings",
+  "uc7core.claimshop.dashboard.quickbuy": "Quickbuy",
+  "uc7core.claimshop.dashboard.close": "Schließen",
+  "uc7core.claimshop.dashboard.close.tip": "Schließe das Shop-Dashboard",
+  "uc7core.claimshop.sell.title": "Chunk verkaufen",
+  "uc7core.claimshop.sell.sell_btn": "Verkaufen",
+  "uc7core.claimshop.sell.sell_btn.tip": "Diesen Chunk zum Verkauf anbieten",
+  "uc7core.claimshop.listings.all.title": "Alle Listings",
+  "uc7core.claimshop.listings.mine.title": "Meine Listings",
+  "uc7core.claimshop.listings.remove.tip": "Diesen Eintrag entfernen",
+
   "key.buyingchunks.buy": "Chunk kaufen",
   "key.categories.buyingchunks": "Buying Chunks"
 }

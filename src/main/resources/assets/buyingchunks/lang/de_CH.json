@@ -67,6 +67,22 @@
   "uc7core.claimshop.list.header": "Zeig %s vo %s Listings:",
   "uc7core.claimshop.list.more": "... und %s wiiteri.",
 
+  "uc7core.claimshop.dashboard.title": "FTB Shop",
+  "uc7core.claimshop.dashboard.chunkinfo": "Aktuells Land",
+  "uc7core.claimshop.dashboard.sell": "Land verchaufe",
+  "uc7core.claimshop.dashboard.sell.prompt": "Gegestand uswähle...",
+  "uc7core.claimshop.dashboard.mylistings": "Mini Listings",
+  "uc7core.claimshop.dashboard.alllistings": "Alli Listings",
+  "uc7core.claimshop.dashboard.quickbuy": "Quickbuy",
+  "uc7core.claimshop.dashboard.close": "Schliesse",
+  "uc7core.claimshop.dashboard.close.tip": "Schliess ds Shop-Dashboard",
+  "uc7core.claimshop.sell.title": "Land verchaufe",
+  "uc7core.claimshop.sell.sell_btn": "Verchaufe",
+  "uc7core.claimshop.sell.sell_btn.tip": "Das Land zum Verchauf abietä",
+  "uc7core.claimshop.listings.all.title": "Alli Listings",
+  "uc7core.claimshop.listings.mine.title": "Mini Listings",
+  "uc7core.claimshop.listings.remove.tip": "De Eitrag entferne",
+
   "key.buyingchunks.buy": "Chunck chaufe",
   "key.categories.buyingchunks": "Buying Chunks"
 }
