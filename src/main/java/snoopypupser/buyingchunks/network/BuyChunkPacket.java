@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import snoopypupser.buyingchunks.BuyingChunks;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
@@ -69,9 +70,13 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
             ClaimShopEntry entry = savedData.getData().getEntry(pos);
 
+            var registry = buyer.getServer().registryAccess();
+
             if (entry == null) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.notforsale")));
+                Component errMsg = Component.translatable("uc7core.claimshop.error.notforsale");
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
 
@@ -79,25 +84,39 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             if (!hasEnoughItems(buyer, price)) {
                 playNoMoneyError(buyer);
-                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
+                Component errMsg = Component.translatable(
                         "uc7core.claimshop.error.notenoughitems",
                         price.getCount(),
                         price.getItem().getDescription().getString()
-                )));
+                );
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
 
             Optional<Team> buyerTeamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayer(buyer);
             if (buyerTeamOpt.isEmpty()) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.noteam")));
+                Component errMsg = Component.translatable("uc7core.claimshop.error.noteam");
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
 
             Team buyerTeam = buyerTeamOpt.get();
             if (buyerTeam.isServerTeam()) {
                 playGenericError(buyer);
-                buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.serverbuyerteam")));
+                Component errMsg = Component.translatable("uc7core.claimshop.error.serverbuyerteam");
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
+                return;
+            }
+
+            if (entry.getSellerUUID().equals(buyer.getUUID())) {
+                playGenericError(buyer);
+                Component errMsg = Component.translatable("uc7core.claimshop.error.ownchunk");
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
 
@@ -107,14 +126,25 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             if (shopTeamOpt.isPresent()) {
                 UUID shopTeamId = shopTeamOpt.get().getId();
+
+                if (buyerTeam.getId().equals(shopTeamId)) {
+                    playGenericError(buyer);
+                    Component errMsg = Component.translatable("uc7core.claimshop.error.ownteamchunk");
+                    buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                    PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
+                    return;
+                }
+
                 if (!savedData.getData().canBuy(shopTeamId, buyerTeam.getId())) {
                     playGenericError(buyer);
                     int limit = savedData.getData().getTeamChunkLimit(shopTeamId);
-                    buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
+                    Component errMsg = Component.translatable(
                             "uc7core.claimshop.error.chunklimit",
                             limit,
                             entry.getShopTeamName()
-                    )));
+                    );
+                    buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                    PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                     return;
                 }
             }

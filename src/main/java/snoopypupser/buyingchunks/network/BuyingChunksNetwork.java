@@ -43,5 +43,10 @@ public class BuyingChunksNetwork {
                 AdminActionPacket.STREAM_CODEC,
                 AdminActionPacket::handle
         );
+        registrar.playToClient(
+                BuyErrorPacket.TYPE,
+                BuyErrorPacket.STREAM_CODEC,
+                BuyErrorPacket::handle
+        );
     }
 }
