@@ -1,13 +1,19 @@
 package snoopypupser.buyingchunks.client;
 
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
+import dev.ftb.mods.ftbteams.api.Team;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import snoopypupser.buyingchunks.claimshop.ClientClaimShopData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
 import snoopypupser.buyingchunks.network.BuyChunkPacket;
+
+import java.util.Optional;
+import java.util.UUID;
 
 public class BuyChunkConfirmScreen extends Screen {
 
@@ -39,6 +45,10 @@ public class BuyChunkConfirmScreen extends Screen {
     private static final int BTN_H = 14;
     private static final int BTN_PADDING_X = 10;
 
+    private int playerItemCount = 0;
+    private boolean canAfford = true;
+    private String limitInfo = null;
+
 
 
     public BuyChunkConfirmScreen(int chunkX, int chunkZ, ClaimShopEntry entry, Screen previousScreen) {
@@ -63,19 +73,60 @@ public class BuyChunkConfirmScreen extends Screen {
         String btnYes  = Component.translatable("uc7core.claimshop.confirm.buy").getString();
         String btnNo   = Component.translatable("uc7core.claimshop.confirm.cancel").getString();
 
-        // Button-Breite = längster Button-Text + Padding
+        if (mc.player != null) {
+            playerItemCount = countItems(mc.player, entry.getPrice());
+            canAfford = playerItemCount >= entry.getPrice().getCount();
+
+            ItemStack baseCost = ClientClaimShopData.getBaseCost();
+            if (baseCost != null && !baseCost.isEmpty()) {
+                canAfford = canAfford && countItems(mc.player, baseCost) >= baseCost.getCount();
+            }
+
+            UUID shopTeamId = null;
+            try {
+                for (Team t : FTBTeamsAPI.api().getManager().getTeams()) {
+                    if (t.getName().getString().equals(entry.getShopTeamName())) {
+                        shopTeamId = t.getId();
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            if (shopTeamId != null) {
+                int limit = ClientClaimShopData.getChunkLimit(shopTeamId);
+                if (limit > 0) {
+                    try {
+                        UUID pid = mc.player.getUUID();
+                        for (Team t : FTBTeamsAPI.api().getManager().getTeams()) {
+                            java.util.Collection<java.util.UUID> members = t.getMembers();
+                            if (members != null && members.contains(pid)) {
+                                int bought = ClientClaimShopData.getBoughtCount(shopTeamId, t.getId());
+                                limitInfo = Component.translatable("uc7core.claimshop.confirm.limit", bought, limit, entry.getShopTeamName()).getString();
+                                break;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
         BTN_W = Math.max(mc.font.width(btnYes), mc.font.width(btnNo)) + BTN_PADDING_X * 2;
+
+        int infoLines = 4; // chunk, price, inventory, question
+        if (limitInfo != null) infoLines++;
+        String inventoryLine = Component.translatable("uc7core.claimshop.confirm.inventory", playerItemCount, entry.getPrice().getItem().getDescription().getString()).getString();
 
         int textWidth = Math.max(mc.font.width(title),
                 Math.max(mc.font.width(line1),
                         Math.max(mc.font.width(line2),
-                                mc.font.width(line3))));
-        // Panel muss mindestens beide Buttons + Gap enthalten
+                                Math.max(mc.font.width(line3),
+                                        Math.max(mc.font.width(inventoryLine),
+                                                limitInfo != null ? mc.font.width(limitInfo) : 0)))));
         textWidth = Math.max(textWidth, BTN_W * 2 + 10);
 
         int padding = 8;
         boxW = textWidth + padding * 2;
-        boxH = lineHeight * 4 + padding * 2 + 6 + BTN_H + 6;
+        boxH = padding + lineHeight + 6 + infoLines * (lineHeight + 2) + 2 + 6 + BTN_H + padding;
 
         boxX = (this.width  - boxW) / 2;
         boxY = (this.height - boxH) / 2;
@@ -113,17 +164,35 @@ public class BuyChunkConfirmScreen extends Screen {
         g.fill(boxX + pad, textY + lh + 2, boxX + boxW - pad, textY + lh + 3, COLOR_OUTLINE_GRAY);
 
         int infoY = textY + lh + 6;
+        int off = 0;
+
         g.drawString(mc.font,
                 Component.translatable("uc7core.claimshop.confirm.chunk", chunkX, chunkZ).getString(),
-                textX, infoY, COLOR_TEXT, false);
+                textX, infoY + off, COLOR_TEXT, false);
+        off += lh + 2;
+
         g.drawString(mc.font,
                 Component.translatable("uc7core.claimshop.confirm.price",
                         entry.getPrice().getCount(),
                         entry.getPrice().getItem().getDescription().getString()).getString(),
-                textX, infoY + lh + 2, COLOR_TEXT, false);
+                textX, infoY + off, COLOR_TEXT, false);
+        off += lh + 2;
+
+        int invColor = canAfford ? COLOR_TEXT : 0xFFE53935;
+        g.drawString(mc.font,
+                Component.translatable("uc7core.claimshop.confirm.inventory", playerItemCount, entry.getPrice().getItem().getDescription().getString()).getString(),
+                textX, infoY + off, invColor, false);
+        off += lh + 2;
+
+        if (limitInfo != null) {
+            g.drawString(mc.font, limitInfo, textX, infoY + off, COLOR_TEXT, false);
+            off += lh + 2;
+        }
+
+        off += 2;
         g.drawString(mc.font,
                 Component.translatable("uc7core.claimshop.confirm.question").getString(),
-                textX, infoY + lh * 2 + 4, COLOR_HEADING, false);
+                textX, infoY + off, COLOR_HEADING, false);
 
         boolean hoverYes = isHovering(mouseX, mouseY, btnYesX, btnYesY, BTN_W, BTN_H);
         boolean hoverNo  = isHovering(mouseX, mouseY, btnNoX,  btnNoY,  BTN_W, BTN_H);
@@ -146,8 +215,26 @@ public class BuyChunkConfirmScreen extends Screen {
                 PacketDistributor.sendToServer(new BuyChunkPacket(chunkX, chunkZ));
                 Minecraft mc = Minecraft.getInstance();
                 Screen mapScreen = previousScreen;
+                if (mc.player != null) {
+                    mc.player.level().playLocalSound(mc.player.blockPosition(),
+                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(),
+                            net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.0f, false);
+                }
                 ClientClaimShopData.setOnUpdateCallback(() ->
                         mc.execute(() -> {
+                            if (mc.player != null) {
+                                mc.player.level().playLocalSound(mc.player.blockPosition(),
+                                        net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
+                                        net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.0f, false);
+                                for (int i = 0; i < 20; i++) {
+                                    mc.player.level().addParticle(
+                                            net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING,
+                                            mc.player.getX() + (mc.player.level().random.nextDouble() - 0.5) * 2,
+                                            mc.player.getY() + mc.player.level().random.nextDouble() * 2,
+                                            mc.player.getZ() + (mc.player.level().random.nextDouble() - 0.5) * 2,
+                                            0, 0, 0);
+                                }
+                            }
                             mc.setScreen(null);
                             mc.tell(() -> mc.setScreen(mapScreen));
                         })
@@ -187,18 +274,39 @@ public class BuyChunkConfirmScreen extends Screen {
         g.fill(x - 1,     y,         x,         y + h,     COLOR_OUTLINE_BLK);
         g.fill(x + w,     y,         x + w + 1, y + h,     COLOR_OUTLINE_BLK);
 
-        g.fill(x,         y,         x + w - 1, y + 1,     COLOR_HIGHLIGHT);
-        g.fill(x,         y,         x + 1,     y + h - 1, COLOR_HIGHLIGHT);
+        g.fill(x - 1, y - 1, x,         y,         COLOR_OUTLINE_BLK);
+        g.fill(x + w, y - 1, x + w + 1, y,         COLOR_OUTLINE_BLK);
+        g.fill(x - 1, y + h, x,         y + h + 1, COLOR_OUTLINE_BLK);
+        g.fill(x + w, y + h, x + w + 1, y + h + 1, COLOR_OUTLINE_BLK);
+
+        g.fill(x,         y,         x + w,     y + 1,     COLOR_HIGHLIGHT);
+        g.fill(x,         y,         x + 1,     y + h,     COLOR_HIGHLIGHT);
 
         g.fill(x + 1,     y + h - 1, x + w,     y + h,     0xFF1a1f2a);
         g.fill(x + w - 1, y + 1,     x + w,     y + h,     0xFF1a1f2a);
 
         g.fill(x + 1, y + 1, x + w - 1, y + h - 1, COLOR_PANEL);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2,     COLOR_ACCENT);
+        g.fill(x + 1, y + 1, x + w - 1, y + 3,     COLOR_ACCENT);
+    }
+
+    private static int countItems(net.minecraft.world.entity.player.Player player, ItemStack required) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            if (ItemStack.isSameItem(stack, required)) {
+                count += stack.getCount();
+                if (count >= required.getCount()) break;
+            }
+        }
+        return count;
     }
 
     private void drawFtbButton(GuiGraphics g, int x, int y, int w, int h,
                                int bgColor, int borderColor, int textColor, String label) {
+        g.fill(x - 1, y - 1, x,         y,         COLOR_OUTLINE_BLK);
+        g.fill(x + w, y - 1, x + w + 1, y,         COLOR_OUTLINE_BLK);
+        g.fill(x - 1, y + h, x,         y + h + 1, COLOR_OUTLINE_BLK);
+        g.fill(x + w, y + h, x + w + 1, y + h + 1, COLOR_OUTLINE_BLK);
+
         g.fill(x,         y - 1,     x + w,     y,         COLOR_OUTLINE_BLK);
         g.fill(x,         y + h,     x + w,     y + h + 1, COLOR_OUTLINE_BLK);
         g.fill(x - 1,     y,         x,         y + h,     COLOR_OUTLINE_BLK);
@@ -214,7 +322,7 @@ public class BuyChunkConfirmScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         int textW = mc.font.width(label);
         int textX = x + (w - textW) / 2;
-        int textY = y + (h - mc.font.lineHeight) / 2 + 1;
+        int textY = y + (h - mc.font.lineHeight) / 2;
         g.drawString(mc.font, label, textX, textY, textColor, false);
     }
 }
