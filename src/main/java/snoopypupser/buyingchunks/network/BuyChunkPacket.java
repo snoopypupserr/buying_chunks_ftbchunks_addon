@@ -22,6 +22,7 @@ import snoopypupser.buyingchunks.BuyingChunks;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
 import snoopypupser.buyingchunks.claimshop.ClaimShopSavedData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopSync;
+import snoopypupser.buyingchunks.util.WebhookSender;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -152,9 +153,17 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             ClaimedChunkManager manager = FTBChunksAPI.api().getManager();
 
             var existingChunk = manager.getChunk(dimPos);
-            if (existingChunk != null) {
-                existingChunk.getTeamData().unclaim(buyer.createCommandSourceStack(), dimPos, false);
+            if (existingChunk == null) {
+                playGenericError(buyer);
+                Component errMsg = Component.translatable("uc7core.claimshop.error.notclaimed");
+                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
+                PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
+                savedData.getData().removeFromSale(pos);
+                savedData.setDirty();
+                ClaimShopSync.syncToAll(buyer.getServer());
+                return;
             }
+            existingChunk.getTeamData().unclaim(buyer.createCommandSourceStack(), dimPos, false);
 
             removeItems(buyer, price);
             savedData.getData().removeFromSale(pos);
@@ -214,6 +223,18 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
 
             ClaimShopSync.syncToAll(buyer.getServer());
             playSuccess(buyer);
+
+            PurchaseEffectPacket effectPacket = new PurchaseEffectPacket(pos.x, pos.z, entry.getTeamColor());
+            double cx = pos.x * 16 + 8;
+            double cz = pos.z * 16 + 8;
+            for (ServerPlayer p : level.players()) {
+                if (p.distanceToSqr(cx, p.getY(), cz) < 64 * 64) {
+                    PacketDistributor.sendToPlayer(p, effectPacket);
+                }
+            }
+
+            WebhookSender.sendChunkEvent(buyer, pos, level.dimension().location().toString(),
+                    price, entry.getShopTeamName(), WebhookSender.EVENT_PURCHASE);
 
             buyer.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                     "uc7core.claimshop.buy.success",

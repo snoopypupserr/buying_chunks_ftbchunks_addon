@@ -42,9 +42,9 @@ public class ChunkEnterHandler {
                     .withStyle(ChatFormatting.RED, ChatFormatting.ITALIC);
         } else {
             Team team = claimed.getTeamData().getTeam();
-            message = Component.literal("~ ")
+            message = Component.translatable("uc7core.claimshop.team.entry.prefix")
                     .append(team.getColoredName())
-                    .append(Component.literal(" ~"));
+                    .append(Component.translatable("uc7core.claimshop.team.entry.suffix"));
         }
 
         player.displayClientMessage(message, true);

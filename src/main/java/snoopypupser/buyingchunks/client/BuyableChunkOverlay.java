@@ -152,7 +152,7 @@ public class BuyableChunkOverlay {
             canAfford = countItems(mc.player, price) >= price.getCount();
         }
 
-        String title = "Chunk [" + currentChunk.x + ", " + currentChunk.z + "]";
+        String title = Component.translatable("uc7core.claimshop.overlay.title", currentChunk.x, currentChunk.z).getString();
         String priceStr = price.getCount() + "x " + price.getItem().getDescription().getString();
         String shopName = currentEntry.getShopTeamName();
         String hint = ModKeyMappings.BUY_KEY.getTranslatedKeyMessage().getString() + " "
@@ -173,7 +173,7 @@ public class BuyableChunkOverlay {
         panelX = sw - panelW - PAD;
         panelY = sh - panelH - PAD;
         btnW = panelW - PAD * 2;
-        closeBtnX = panelX + panelW - PAD - mc.font.width("\u2715") + 2;
+        closeBtnX = panelX + panelW - PAD - mc.font.width(Component.translatable("uc7core.claimshop.overlay.close").getString()) + 2;
         closeBtnY = panelY + PAD;
 
         drawFtbPanel(g, panelX, panelY, panelW, panelH);
@@ -182,7 +182,7 @@ public class BuyableChunkOverlay {
         int y = panelY + PAD;
 
         g.drawString(mc.font, title, x, y, COL_TITLE, false);
-        g.drawString(mc.font, "\u2715", closeBtnX, closeBtnY, COL_CLOSE, false);
+        g.drawString(mc.font, Component.translatable("uc7core.claimshop.overlay.close").getString(), closeBtnX, closeBtnY, COL_CLOSE, false);
         y += lh + 3;
 
         g.fill(x, y, panelX + panelW - PAD, y + 1, COL_HIGHLIGHT);
@@ -256,7 +256,6 @@ public class BuyableChunkOverlay {
         for (ItemStack stack : player.getInventory().items) {
             if (ItemStack.isSameItem(stack, required)) {
                 count += stack.getCount();
-                if (count >= required.getCount()) break;
             }
         }
         return count;

@@ -1,6 +1,7 @@
 package snoopypupser.buyingchunks.client;
 
 import dev.ftb.mods.ftblibrary.config.ItemStackConfig;
+import dev.ftb.mods.ftblibrary.icon.Color4I;
 import dev.ftb.mods.ftblibrary.ui.*;
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton;
 import net.minecraft.client.Minecraft;
@@ -8,9 +9,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class SellChunkScreen extends BaseAdminScreen {
 
@@ -20,11 +24,43 @@ public class SellChunkScreen extends BaseAdminScreen {
     private int sellX, sellY;
     private int itemLabelY, itemFieldY, amtLabelY, amtFieldY;
     private int pickerX, pickerY;
+    private int statusY;
     private TextBox itemField, amountField;
     private String pendingItemId = "";
     private String pendingAmount = "1";
 
-    public SellChunkScreen(BaseScreen previous) { this.previous = previous; }
+    private final ChunkPos currentChunk;
+    private final boolean alreadyForSale;
+    private final String existingPriceStr;
+    private final int teamColor;
+    private final String teamName;
+
+    public SellChunkScreen(BaseScreen previous) {
+        this.previous = previous;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            currentChunk = new ChunkPos(mc.player.blockPosition());
+            ResourceLocation dim = mc.player.level().dimension().location();
+            var existing = snoopypupser.buyingchunks.claimshop.ClientClaimShopData.getEntry(dim, currentChunk);
+            if (existing != null) {
+                alreadyForSale = true;
+                existingPriceStr = existing.getPrice().getCount() + "x " + existing.getPrice().getItem().getDescription().getString();
+                teamColor = existing.getTeamColor();
+                teamName = existing.getShopTeamName();
+            } else {
+                alreadyForSale = false;
+                existingPriceStr = "";
+                teamColor = 0xFFFFFF;
+                teamName = "";
+            }
+        } else {
+            currentChunk = new ChunkPos(0, 0);
+            alreadyForSale = false;
+            existingPriceStr = "";
+            teamColor = 0xFFFFFF;
+            teamName = "";
+        }
+    }
 
     @Override
     public boolean onInit() {
@@ -33,14 +69,17 @@ public class SellChunkScreen extends BaseAdminScreen {
         int lh = mc.font.lineHeight;
         int cw = Math.max(mc.font.width(Component.translatable("uc7core.claimshop.sell.title").getString()),
                 mc.font.width(Component.translatable("uc7core.claimshop.admin.item").getString()));
-        cw = Math.max(cw, BTN_W + 10); cw = Math.max(cw, 180);
+        cw = Math.max(cw, BTN_W + 10); cw = Math.max(cw, 200);
         bw = cw + PAD * 2 + 10;
         bh = PAD + BTN_H + GAP_BACK_TITLE + lh + GAP_TITLE_DIVIDER + 1 + GAP_DIVIDER_CONTENT
-                + lh + GAP_LABEL_FIELD + FIELD_H + GAP_FIELD_NEXT
+                + (alreadyForSale ? lh * 3 + 6 : lh + 2) // status area
+                + GAP_LABEL_FIELD + FIELD_H + GAP_FIELD_NEXT
                 + lh + GAP_LABEL_FIELD + FIELD_H + GAP_CONTENT_BTN + BTN_H + PAD;
         computeTopSection(lh);
 
         int y = contentY;
+        statusY = y;
+        y += (alreadyForSale ? lh * 3 + 6 : lh + 2);
         y += lh + 6; itemLabelY = y;
         y += lh + GAP_LABEL_FIELD; itemFieldY = y;
         y += FIELD_H + GAP_FIELD_NEXT; amtLabelY = y;
@@ -83,6 +122,26 @@ public class SellChunkScreen extends BaseAdminScreen {
 
         int ix = bx + PAD + 2;
 
+        // Chunk status
+        String posStr = Component.translatable("uc7core.claimshop.sell.chunk_pos",
+                currentChunk.x, currentChunk.z).getString();
+        theme.drawString(g, posStr, ix, statusY, COL_HEADING, 0);
+        int ty = statusY + theme.getFont().lineHeight + 2;
+
+        if (alreadyForSale) {
+            String forSaleStr = Component.translatable("uc7core.claimshop.sell.already_for_sale", existingPriceStr).getString();
+            theme.drawString(g, forSaleStr, ix, ty, COL_GREEN_T, 0);
+            ty += theme.getFont().lineHeight + 2;
+            String teamLabel = Component.translatable("uc7core.claimshop.sell.team_color").getString();
+            theme.drawString(g, teamLabel, ix, ty, COL_TEXT, 0);
+            int labelW = theme.getFont().width(teamLabel);
+            theme.drawString(g, teamName, ix + labelW + 4, ty, Color4I.rgb(teamColor), 0);
+        } else {
+            String notForSaleStr = Component.translatable("uc7core.claimshop.sell.not_for_sale").getString();
+            theme.drawString(g, notForSaleStr, ix, ty, COL_HINT, 0);
+        }
+
+        // Item/amount fields
         theme.drawString(g, Component.translatable("uc7core.claimshop.admin.item").getString(), ix, itemLabelY, COL_TEXT, 0);
         theme.drawString(g, Component.translatable("uc7core.claimshop.admin.amount").getString(), ix, amtLabelY, COL_TEXT, 0);
 
@@ -130,7 +189,11 @@ public class SellChunkScreen extends BaseAdminScreen {
         int a;
         try { a = Integer.parseInt(amountField.getText().trim()); if (a < 1) a = 1; if (a > 64) a = 64; }
         catch (NumberFormatException e) { a = 1; }
-        Minecraft.getInstance().player.connection.sendCommand("ftbshop sell " + id + " " + a);
+        PacketDistributor.sendToServer(new snoopypupser.buyingchunks.network.SellChunkPacket(id, a));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            mc.player.playSound(SoundEvents.PLAYER_LEVELUP, 0.5f, 1.0f);
+        }
         previous.openGui();
     }
 

@@ -97,16 +97,14 @@ public class AdminActionHandler {
                 )));
             }
             case AdminActionPacket.ACTION_REMOVE_TEAM_PRICE -> {
-                Optional<Team> team = findTeam(packet.teamId());
-                if (team.isEmpty()) {
-                    player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.teamnotfound", packet.teamId())));
-                    return;
-                }
-                data.removeTeamPrice(team.get().getId());
+                data.removeTeamPrice(packet.teamId());
                 savedData.setDirty();
                 syncAdminToPlayer(player);
+                String name = findTeam(packet.teamId())
+                        .map(t -> t.getName().getString())
+                        .orElse(packet.teamId().toString().substring(0, 8) + "...");
                 player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
-                        "uc7core.claimshop.teamprice.remove.success", team.get().getName().getString()
+                        "uc7core.claimshop.teamprice.remove.success", name
                 )));
             }
             case AdminActionPacket.ACTION_SET_CHUNK_LIMIT -> {
@@ -124,48 +122,42 @@ public class AdminActionHandler {
                 )));
             }
             case AdminActionPacket.ACTION_REMOVE_CHUNK_LIMIT -> {
-                Optional<Team> team = findTeam(packet.teamId());
-                if (team.isEmpty()) {
-                    player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.teamnotfound", packet.teamId())));
-                    return;
-                }
-                data.removeTeamChunkLimit(team.get().getId());
+                data.removeTeamChunkLimit(packet.teamId());
                 savedData.setDirty();
                 syncAdminToPlayer(player);
+                String name = findTeam(packet.teamId())
+                        .map(t -> t.getName().getString())
+                        .orElse(packet.teamId().toString().substring(0, 8) + "...");
                 player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
-                        "uc7core.claimshop.chunklimit.remove.success", team.get().getName().getString()
+                        "uc7core.claimshop.chunklimit.remove.success", name
                 )));
             }
             case AdminActionPacket.ACTION_SET_PLAYER_INCOME -> {
-                Optional<Team> team = findTeam(packet.teamId());
-                if (team.isEmpty()) {
-                    player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.teamnotfound", packet.teamId())));
-                    return;
-                }
-                data.setPlayerIncomeEnabled(team.get().getId(), packet.enabled());
+                data.setPlayerIncomeEnabled(packet.teamId(), packet.enabled());
                 savedData.setDirty();
                 syncAdminToPlayer(player);
+                String name = findTeam(packet.teamId())
+                        .map(t -> t.getName().getString())
+                        .orElse(packet.teamId().toString().substring(0, 8) + "...");
                 player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                         packet.enabled() ? "uc7core.claimshop.playerincome.enabled" : "uc7core.claimshop.playerincome.disabled",
-                        team.get().getName().getString()
+                        name
                 )));
             }
             case AdminActionPacket.ACTION_SET_AUTO_RECLAIM -> {
-                Optional<Team> team = findTeam(packet.teamId());
-                if (team.isEmpty()) {
+                if (packet.teamId().equals(AdminActionPacket.NO_TEAM)) {
                     player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.teamnotfound", packet.teamId())));
                     return;
                 }
-                if (!team.get().isServerTeam()) {
-                    player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.notserverteam")));
-                    return;
-                }
-                data.setAutoReclaim(team.get().getId(), packet.enabled());
+                data.setAutoReclaim(packet.teamId(), packet.enabled());
                 savedData.setDirty();
                 syncAdminToPlayer(player);
+                String name = findTeam(packet.teamId())
+                        .map(t -> t.getName().getString())
+                        .orElse(packet.teamId().toString().substring(0, 8) + "...");
                 player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
                         packet.enabled() ? "uc7core.claimshop.autoreclaim.enabled" : "uc7core.claimshop.autoreclaim.disabled",
-                        team.get().getName().getString()
+                        name
                 )));
             }
             case AdminActionPacket.ACTION_CREATE_SERVER_TEAM -> {
@@ -230,7 +222,7 @@ public class AdminActionHandler {
                     case "allow_all_fake_players" -> t.settings(source, FTBChunksProperties.ALLOW_ALL_FAKE_PLAYERS, value ? "true" : "false");
                     case "allow_fake_players_by_id" -> t.settings(source, FTBChunksProperties.ALLOW_FAKE_PLAYERS_BY_ID, value ? "true" : "false");
                     default -> {
-                        player.sendSystemMessage(BuyingChunks.prefix(Component.literal("Unknown property: " + key)));
+                        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.unknown_property", key)));
                         return;
                     }
                 }
@@ -255,7 +247,7 @@ public class AdminActionHandler {
                     case "location_mode" -> t.settings(source, FTBChunksProperties.LOCATION_MODE, mode.getSerializedName());
                     case "block_edit_and_interact_mode" -> t.settings(source, FTBChunksProperties.BLOCK_EDIT_AND_INTERACT_MODE, mode.getSerializedName());
                     default -> {
-                        player.sendSystemMessage(BuyingChunks.prefix(Component.literal("Unknown property: " + key)));
+                        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.error.unknown_property", key)));
                         return;
                     }
                 }
@@ -285,3 +277,4 @@ public class AdminActionHandler {
                 .findFirst();
     }
 }
+

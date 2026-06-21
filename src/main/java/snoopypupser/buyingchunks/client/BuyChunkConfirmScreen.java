@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
+import snoopypupser.buyingchunks.BuyingChunks;
 import snoopypupser.buyingchunks.claimshop.ClientClaimShopData;
 import snoopypupser.buyingchunks.claimshop.ClaimShopEntry;
 import snoopypupser.buyingchunks.network.BuyChunkPacket;
@@ -84,20 +85,22 @@ public class BuyChunkConfirmScreen extends Screen {
 
             UUID shopTeamId = null;
             try {
-                for (Team t : FTBTeamsAPI.api().getManager().getTeams()) {
+                for (Team t : FTBTeamsAPI.api().getClientManager().getTeams()) {
                     if (t.getName().getString().equals(entry.getShopTeamName())) {
                         shopTeamId = t.getId();
                         break;
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                BuyingChunks.LOGGER.warn("BuyChunkConfirmScreen: failed to look up shop team", e);
+            }
 
             if (shopTeamId != null) {
                 int limit = ClientClaimShopData.getChunkLimit(shopTeamId);
                 if (limit > 0) {
                     try {
                         UUID pid = mc.player.getUUID();
-                        for (Team t : FTBTeamsAPI.api().getManager().getTeams()) {
+                        for (Team t : FTBTeamsAPI.api().getClientManager().getTeams()) {
                             java.util.Collection<java.util.UUID> members = t.getMembers();
                             if (members != null && members.contains(pid)) {
                                 int bought = ClientClaimShopData.getBoughtCount(shopTeamId, t.getId());
@@ -105,7 +108,9 @@ public class BuyChunkConfirmScreen extends Screen {
                                 break;
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        BuyingChunks.LOGGER.warn("BuyChunkConfirmScreen: failed to look up buyer team", e);
+                    }
                 }
             }
         }
@@ -294,7 +299,6 @@ public class BuyChunkConfirmScreen extends Screen {
         for (ItemStack stack : player.getInventory().items) {
             if (ItemStack.isSameItem(stack, required)) {
                 count += stack.getCount();
-                if (count >= required.getCount()) break;
             }
         }
         return count;

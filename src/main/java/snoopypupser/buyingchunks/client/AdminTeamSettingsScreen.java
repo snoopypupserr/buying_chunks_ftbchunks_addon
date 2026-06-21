@@ -311,9 +311,13 @@ public class AdminTeamSettingsScreen extends BaseAdminScreen {
                 int rx_claim = rx_remove - CLM_BTN_W - 2;
                 if (hit(rx_claim, ry + 1, CLM_BTN_W, BTN_H)) {
                     UUID clickedId = teams.get(i);
-                    FTBTeamsAPI.api().getManager().getTeams().stream()
-                            .filter(t -> t.getId().equals(clickedId))
-                            .findFirst().ifPresent(ChunkScreen::openChunkScreen);
+                    try {
+                        FTBTeamsAPI.api().getClientManager().getTeams().stream()
+                                .filter(t -> t.getId().equals(clickedId))
+                                .findFirst().ifPresent(ChunkScreen::openChunkScreen);
+                    } catch (Exception e) {
+                        BuyingChunks.LOGGER.warn("AdminTeamSettingsScreen: failed to open chunk screen", e);
+                    }
                     return true;
                 }
                 if (hit(rx_remove, ry + 1, SMALL_BTN_W, BTN_H)) {
@@ -347,8 +351,8 @@ public class AdminTeamSettingsScreen extends BaseAdminScreen {
 
     private void buildCache() {
         teamCache.clear();
-        try { var teams = FTBTeamsAPI.api().getManager().getTeams(); for (Team t : teams) teamCache.put(t.getId(), t.getName().getString()); }
-        catch (Exception ignored) {}
+        try { var teams = FTBTeamsAPI.api().getClientManager().getTeams(); for (Team t : teams) teamCache.put(t.getId(), t.getName().getString()); }
+        catch (Exception e) { BuyingChunks.LOGGER.warn("AdminTeamSettingsScreen: failed to build team cache", e); }
     }
 
     private List<UUID> getTeams() {

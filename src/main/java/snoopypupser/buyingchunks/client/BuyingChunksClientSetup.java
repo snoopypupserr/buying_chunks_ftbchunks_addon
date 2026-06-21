@@ -13,5 +13,6 @@ public class BuyingChunksClientSetup {
         modEventBus.addListener(RegisterKeyMappingsEvent.class, ModKeyMappings::register);
         new ClaimShopRenderer().register();
         new BuyableChunkOverlay().register();
+        new ChunkBorderRenderer().register();
     }
 }

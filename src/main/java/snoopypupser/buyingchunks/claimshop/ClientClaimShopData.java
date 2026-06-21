@@ -7,10 +7,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientClaimShopData {
@@ -91,6 +88,34 @@ public class ClientClaimShopData {
         return quickbuyEnabled;
     }
 
+    // --- Favorites ---
+
+    private static final Map<ResourceLocation, Set<ChunkPos>> favorites = new HashMap<>();
+
+    public static boolean isFavorite(ResourceLocation dim, ChunkPos pos) {
+        Set<ChunkPos> dimFavs = favorites.get(dim);
+        return dimFavs != null && dimFavs.contains(pos);
+    }
+
+    public static void toggleFavorite(ResourceLocation dim, ChunkPos pos) {
+        favorites.computeIfAbsent(dim, k -> new HashSet<>());
+        if (!favorites.get(dim).remove(pos)) {
+            favorites.get(dim).add(pos);
+        }
+    }
+
+    // --- Pending Income ---
+
+    private static List<ItemStack> pendingIncome = List.of();
+
+    public static List<ItemStack> getPendingIncome() {
+        return pendingIncome;
+    }
+
+    public static void setPendingIncome(List<ItemStack> income) {
+        pendingIncome = income;
+    }
+
     public static void markDirty() {
         dirty = true;
     }
@@ -102,4 +127,5 @@ public class ClientClaimShopData {
         }
         return false;
     }
+
 }

@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
+import snoopypupser.buyingchunks.BuyingChunks;
 import snoopypupser.buyingchunks.network.AdminActionPacket;
 
 import java.util.*;
@@ -75,11 +76,13 @@ public class AdminServerTeamMgmtScreen extends BaseAdminScreen {
     public void refreshTeamList() {
         serverTeams.clear();
         try {
-            serverTeams = FTBTeamsAPI.api().getManager().getTeams().stream()
+            serverTeams = FTBTeamsAPI.api().getClientManager().getTeams().stream()
                     .filter(Team::isServerTeam)
                     .sorted(Comparator.comparing(t -> t.getName().getString()))
                     .collect(Collectors.toList());
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            BuyingChunks.LOGGER.warn("AdminServerTeamMgmtScreen: failed to refresh team list", e);
+        }
     }
 
     @Override

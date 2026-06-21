@@ -152,7 +152,6 @@ public class ClaimShopRenderer {
         for (ItemStack stack : player.getInventory().items) {
             if (ItemStack.isSameItem(stack, required)) {
                 count += stack.getCount();
-                if (count >= required.getCount()) break;
             }
         }
         return count;

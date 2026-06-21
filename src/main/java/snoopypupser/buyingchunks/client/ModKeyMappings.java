@@ -13,7 +13,15 @@ public class ModKeyMappings {
         "key.categories.buyingchunks"
     );
 
+    public static final KeyMapping TOGGLE_OVERLAY = new KeyMapping(
+        "key.buyingchunks.toggle_overlay",
+        InputConstants.Type.KEYSYM,
+        InputConstants.UNKNOWN.getValue(),
+        "key.categories.buyingchunks"
+    );
+
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(BUY_KEY);
+        event.register(TOGGLE_OVERLAY);
     }
 }
