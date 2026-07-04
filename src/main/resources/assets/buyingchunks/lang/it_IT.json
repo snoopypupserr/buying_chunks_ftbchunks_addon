@@ -20,7 +20,7 @@
   "uc7core.claimshop.tooltip.position": "Chunk: [%s]",
   "uc7core.claimshop.tooltip.price": "Prezzo: %s%s",
   "uc7core.claimshop.tooltip.click": "Clic sinistro per comprare!",
-  "uc7core.claimshop.tooltip.inventory": "Inventory: %sx %s",
+  "uc7core.claimshop.tooltip.inventory": "L'inventario: %sx %s",
   "uc7core.claimshop.error.chunklimit": "La tua squadra ha raggiunto il limite di chunk (%s) per il negozio '%s'!",
   "uc7core.claimshop.chunklimit.set.success": "La squadra '%s' ora ha un limite d'acquisto dei chunk di %s.",
   "uc7core.claimshop.chunklimit.remove.success": "Limite d'acquisto dei chunk rimosso per la squadra '%s'.",
