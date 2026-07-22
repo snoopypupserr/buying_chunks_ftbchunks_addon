@@ -22,15 +22,16 @@ A NeoForge 1.21.1 addon for FTB Chunks that adds a fully-featured **chunk shop &
 - **FTB Shop GUI** — a full in-game dashboard (`/ftbshop gui`) with a Marketplace, Sell Chunk screen, My Listings, and a Quickbuy toggle
 - **Admin Dashboard** — manage Base Cost, Player Sell, Team Prices, Buy Limits, Player Income, Auto-Reclaim, and full Server Team Management, all from one screen (`/ftbshop admin`)
 - **Player Marketplace** — players can list their own claimed chunks for sale at a custom price (if enabled by an admin), browse all listings, search by team name, sort by price or distance, and mark favorites
+- **Bulk Sell** — select multiple claimed chunks and list them all at once at the same price, either from the dashboard or via a sell mode toggle on the FTB Chunks map
 - **In-World Buy Overlay** — a HUD panel pops up automatically when you're near a for-sale chunk, showing the price, the seller's team, and a live inventory comparison, with a clickable Buy button
 - **Buy Hotkey** — press a key (default `B`) to instantly buy the chunk you're standing in
 - **Visual Map Icons** — for-sale chunks still appear as icons on the FTB Chunks map, now color-coded to the seller's team and with richer tooltips
 - **Particle Chunk Borders** — nearby for-sale chunks are outlined with particles (configurable radius/density)
-- **Team Shop System** — create server teams with a fixed price per chunk; any chunk claimed by that team is automatically listed for sale
-- **Base Cost** — optionally require a universal item payment for *any* chunk claim on the server, separate from the marketplace/team shop
+- **Team Shop System** — create server teams with a fixed price per chunk; any chunk claimed by that team is automatically listed for sale. When multiple chunks are claimed at once, purchase messages are batched into a single summary.
+- **Base Cost** — optionally require an item payment for *any* chunk claim on the server, with **separate prices per dimension** (Overworld, Nether, End), separate from the marketplace/team shop
 - **Multi-Dimension Support** — the marketplace, base cost, and listings now work in every dimension, not just the Overworld
 - **Quickbuy** — optionally skip the purchase confirmation screen entirely
-- **Purchase Effects & Toasts** — visual/sound feedback on purchase, plus toast notifications for buying and listing
+- **Purchase Effects & Toasts** — visual/sound feedback on purchase, plus toast notifications shown only to the buyer (nearby players still see particles/sound)
 - **Welcome Message** — configurable message shown to players on their first join
 - **Discord Webhook Integration** — optionally post buy/sell/remove events to a Discord channel (or any webhook URL) as embeds
 - **Automatic Sync** — all clients are updated in real-time when chunks are listed, bought, or removed
@@ -142,7 +143,7 @@ Buying Chunks supports three independent, stackable pricing mechanisms, all conf
 
 | System | Where to set it | Applies to |
 |---|---|---|
-| **Base Cost** | Admin Dashboard → Base Cost | Every chunk claim on the server, regardless of team |
+| **Base Cost** | Admin Dashboard → Base Cost (with dimension tabs) | Every chunk claim on the server, per dimension (Overworld/Nether/End) |
 | **Team Shop** | Admin Dashboard → Team Prices | All chunks claimed by a specific (usually server-owned) team — auto-listed |
 | **Player Marketplace** | The chunk's owner, via `/ftbshop gui` | Any already-claimed chunk a player chooses to list, if Player Sell is enabled |
 
@@ -174,10 +175,11 @@ Clicking **Manage** opens the **Team Detail** screen — a full reimplementation
 
 A quick screen-by-screen breakdown of what's clickable where.
 
-**`/ftbshop gui` → Main Dashboard** (4 rows)
+**`/ftbshop gui` → Main Dashboard** (5 rows)
 | Row | What it shows | What it does |
 |---|---|---|
 | Marketplace | number of chunks currently for sale in your dimension | opens the Marketplace |
+| Bulk Sell | prompt to select chunks to sell | opens Bulk Sell screen |
 | Sell Chunk | the price if the chunk you're standing in is already listed, otherwise a prompt | opens Sell Chunk |
 | My Listings | your active listing count + a preview of pending income, if any | opens My Listings |
 | Quickbuy | Enabled / Disabled | toggles Quickbuy instantly (no screen change) |
@@ -215,7 +217,7 @@ A quick screen-by-screen breakdown of what's clickable where.
 **`/ftbshop admin` → Admin Dashboard** (7 rows, each with a live summary on the right)
 | Row | Live summary shown |
 |---|---|
-| Base Cost | current cost, or "Not set" |
+| Base Cost | number of dimensions configured, or "Not set" |
 | Player Sell | Enabled/Disabled |
 | Team Prices | number of teams configured |
 | Buy Limits | number of teams with a limit |
@@ -223,7 +225,7 @@ A quick screen-by-screen breakdown of what's clickable where.
 | Auto-Reclaim | number of teams enabled |
 | Server Team Management | — |
 
-**Admin → Base Cost**: item field + 🔍 picker, amount field, **Set** and **Remove** buttons, shows the currently active cost.
+**Admin → Base Cost**: click the **Overworld / Nether / End** tab to select which dimension you're configuring, then use the item field + 🔍 picker, amount field, **Set** and **Remove** buttons. Each dimension can have its own independent base cost.
 
 **Admin → Player Sell**: description text + a single **Enable/Disable** toggle button.
 
@@ -249,12 +251,21 @@ You can't buy your own chunk or a chunk owned by your own team, and you can't bu
 
 ## 💰 Selling Your Own Chunks
 
-If an admin has enabled **Player Sell**:
+If an admin has enabled **Player Sell**, there are two ways to sell:
 
+### Single Chunk
 1. Stand in a chunk your team owns.
 2. Open `/ftbshop gui` → **Sell Chunk**.
 3. Pick an item and amount as the asking price (type the ID or use the 🔍 picker), then hit **Sell**.
 4. Track your active listings in **My Listings**, and remove a listing any time with its **Remove** button. Payment is handed to you automatically when the chunk sells (instantly if you're online, otherwise on your next login) — there's no manual "claim" step.
+
+### Bulk Sell
+1. Open `/ftbshop gui` → **Bulk Sell**.
+2. Click chunks in the grid to select/deselect them (already-listed chunks are shown in green and can't be selected).
+3. Set the item and amount you want to charge per chunk.
+4. Hit **Sell Selected** — all selected chunks are listed at once.
+
+Alternatively, you can enable **Sell Mode** directly on the FTB Chunks map: open the chunk selection screen, click the sell mode toggle in the top-left, then drag-select chunks and confirm the price.
 
 ---
 
@@ -289,9 +300,10 @@ It can be translated even more here: https://crowdin.com/project/buying-chunks
 
 ## ⚙️ How It Works
 
-- Shop data is saved server-side per dimension using Minecraft's `SavedData` system — it persists across restarts.
-- When a player joins (or data changes), all current shop listings, base cost, buy limits, and bought counts are synced to clients for every dimension.
+- Shop data is saved server-side using Minecraft's `SavedData` system — it persists across restarts. Base cost supports per-dimension configuration (Overworld, Nether, End each with their own price).
+- When a player joins (or data changes), all current shop listings, base costs, buy limits, and bought counts are synced to clients for every dimension.
 - When a chunk is purchased, the old claim is removed and the chunk is re-claimed under the buyer's team; the base cost (if any) is skipped for shop purchases to avoid double-charging.
+- Non-shop claims (regular player claims) require the base cost item to be in the player's inventory. The cost is checked before the claim is allowed and deducted after it succeeds.
 - Items are taken directly from the buyer's inventory.
 - Listings for chunks that are no longer actually claimed are automatically cleaned up during sync.
 
