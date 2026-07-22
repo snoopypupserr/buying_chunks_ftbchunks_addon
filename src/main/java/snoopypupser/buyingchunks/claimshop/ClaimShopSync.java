@@ -3,6 +3,7 @@ package snoopypupser.buyingchunks.claimshop;
 import dev.ftb.mods.ftbchunks.api.FTBChunksAPI;
 import dev.ftb.mods.ftbchunks.api.ClaimedChunkManager;
 import dev.ftb.mods.ftblibrary.math.ChunkDimPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,7 @@ public class ClaimShopSync {
 
     public static void syncToAll(MinecraftServer server) {
         ClaimShopData globalData = ClaimShopSavedData.get(server.overworld()).getData();
-        ItemStack globalBaseCost = globalData.getBaseCost();
+        Map<ResourceLocation, ItemStack> allBaseCosts = globalData.getAllBaseCosts();
         Map<UUID, Integer> globalLimits = globalData.getAllTeamChunkLimits();
         Map<UUID, Map<UUID, Integer>> globalBought = globalData.getAllTeamBoughtCounts();
 
@@ -28,7 +29,7 @@ public class ClaimShopSync {
             SyncClaimShopPacket packet = new SyncClaimShopPacket(
                     level.dimension().location(),
                     filtered,
-                    level.dimension().location().equals(ServerLevel.OVERWORLD.location()) ? globalBaseCost : ItemStack.EMPTY,
+                    allBaseCosts,
                     globalLimits,
                     globalBought
             );
@@ -38,7 +39,7 @@ public class ClaimShopSync {
 
     public static void syncToPlayer(ServerPlayer player) {
         ClaimShopData globalData = ClaimShopSavedData.get(player.getServer().overworld()).getData();
-        ItemStack globalBaseCost = globalData.getBaseCost();
+        Map<ResourceLocation, ItemStack> allBaseCosts = globalData.getAllBaseCosts();
         Map<UUID, Integer> globalLimits = globalData.getAllTeamChunkLimits();
         Map<UUID, Map<UUID, Integer>> globalBought = globalData.getAllTeamBoughtCounts();
 
@@ -48,7 +49,7 @@ public class ClaimShopSync {
             SyncClaimShopPacket packet = new SyncClaimShopPacket(
                     level.dimension().location(),
                     filtered,
-                    level.dimension().location().equals(ServerLevel.OVERWORLD.location()) ? globalBaseCost : ItemStack.EMPTY,
+                    allBaseCosts,
                     globalLimits,
                     globalBought
             );

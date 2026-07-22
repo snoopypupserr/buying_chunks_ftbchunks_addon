@@ -45,6 +45,7 @@ public class AdminActionHandler {
 
         switch (packet.actionType()) {
             case AdminActionPacket.ACTION_SET_BASE_COST -> {
+                ResourceLocation dim = ResourceLocation.parse(packet.dimension().isEmpty() ? "minecraft:overworld" : packet.dimension());
                 ResourceLocation id = ResourceLocation.parse(packet.itemId());
                 Item item = BuiltInRegistries.ITEM.get(id);
                 if (item == null || item == BuiltInRegistries.ITEM.get(ResourceLocation.parse("air"))) {
@@ -52,20 +53,21 @@ public class AdminActionHandler {
                     return;
                 }
                 int amount = Math.max(1, Math.min(64, packet.amount()));
-                data.setBaseCost(item, amount);
+                data.setBaseCost(dim, item, amount);
                 savedData.setDirty();
                 ClaimShopSync.syncToAll(player.getServer());
                 syncAdminToPlayer(player);
                 player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
-                        "uc7core.claimshop.basecost.set.success", amount, item.getDescription().getString()
+                        "uc7core.claimshop.basecost.set.success", amount, item.getDescription().getString(), dim.getPath()
                 )));
             }
             case AdminActionPacket.ACTION_REMOVE_BASE_COST -> {
-                data.removeBaseCost();
+                ResourceLocation dim = ResourceLocation.parse(packet.dimension().isEmpty() ? "minecraft:overworld" : packet.dimension());
+                data.removeBaseCost(dim);
                 savedData.setDirty();
                 ClaimShopSync.syncToAll(player.getServer());
                 syncAdminToPlayer(player);
-                player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.basecost.remove.success")));
+                player.sendSystemMessage(BuyingChunks.prefix(Component.translatable("uc7core.claimshop.basecost.remove.success", dim.getPath())));
             }
             case AdminActionPacket.ACTION_SET_PLAYER_SELL -> {
                 data.setPlayerSellEnabled(packet.enabled());

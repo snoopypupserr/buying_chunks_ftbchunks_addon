@@ -6,6 +6,9 @@ import dev.ftb.mods.ftbchunks.api.ClaimResult;
 import dev.ftb.mods.ftbchunks.api.event.ClaimedChunkEvent;
 import dev.ftb.mods.ftbteams.api.Team;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
@@ -106,19 +109,20 @@ public class BuyingChunks {
                 return CompoundEventResult.pass();
             }
 
-            ServerLevel level = (ServerLevel) player.level();
-            ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
+            ResourceKey<Level> chunkDimKey = chunk.getPos().dimension();
+            ClaimShopSavedData savedData = ClaimShopSavedData.get(player.getServer().overworld());
+            ResourceLocation chunkDim = chunkDimKey.location();
 
-            if (!savedData.getData().hasBaseCost()) return CompoundEventResult.pass();
+            if (!savedData.getData().hasBaseCost(chunkDim)) return CompoundEventResult.pass();
 
-            // Shop-KÃ¤ufe Ã¼berspringen (werden im Shop-Code behandelt)
+            // Shop-Käufe überspringen (werden im Shop-Code behandelt)
             if (isShopClaim(chunk.getPos().chunkPos())) return CompoundEventResult.pass();
 
-            // Server-Teams Ã¼berspringen
+            // Server-Teams überspringen
             Team claimingTeam = chunk.getTeamData().getTeam();
             if (claimingTeam.isServerTeam()) return CompoundEventResult.pass();
 
-            ItemStack cost = savedData.getData().getBaseCost();
+            ItemStack cost = savedData.getData().getBaseCost(chunkDim);
             if (!hasEnoughItems(player, cost)) {
                 player.sendSystemMessage(prefix(Component.translatable(
                         "uc7core.claimshop.basecost.notenough",
@@ -150,10 +154,11 @@ public class BuyingChunks {
                 return;
             }
 
-            ServerLevel level = (ServerLevel) player.level();
-            ClaimShopSavedData savedData = ClaimShopSavedData.get(level);
+            ResourceKey<Level> chunkDimKey = chunk.getPos().dimension();
+            ClaimShopSavedData savedData = ClaimShopSavedData.get(player.getServer().overworld());
+            ResourceLocation chunkDim = chunkDimKey.location();
 
-            if (!savedData.getData().hasBaseCost()) {
+            if (!savedData.getData().hasBaseCost(chunkDim)) {
                 LOGGER.info("BaseCost: No base cost set, skipping.");
                 return;
             }
@@ -170,7 +175,7 @@ public class BuyingChunks {
                 return;
             }
 
-            ItemStack cost = savedData.getData().getBaseCost();
+            ItemStack cost = savedData.getData().getBaseCost(chunkDim);
             LOGGER.info("BaseCost: Required: {}x {}", cost.getCount(), cost.getItem().getDescriptionId());
 
             // Accumulator fÃ¼r diesen Spieler holen oder erstellen

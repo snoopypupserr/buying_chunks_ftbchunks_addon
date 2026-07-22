@@ -20,7 +20,7 @@ import java.util.UUID;
 public record SyncClaimShopPacket(
         ResourceLocation dimension,
         Map<ChunkPos, ClaimShopEntry> forSaleChunks,
-        ItemStack baseCost,
+        Map<ResourceLocation, ItemStack> baseCosts,
         Map<UUID, Integer> teamChunkLimits,
         Map<UUID, Map<UUID, Integer>> teamBoughtCounts
 ) implements CustomPacketPayload {
@@ -55,7 +55,11 @@ public record SyncClaimShopPacket(
             buf.writeUUID(entry.getValue().getSellerUUID());
             buf.writeInt(entry.getValue().getTeamColor());
         }
-        writeItemStack(buf, packet.baseCost());
+        buf.writeInt(packet.baseCosts().size());
+        for (Map.Entry<ResourceLocation, ItemStack> bcEntry : packet.baseCosts().entrySet()) {
+            buf.writeResourceLocation(bcEntry.getKey());
+            writeItemStack(buf, bcEntry.getValue());
+        }
 
         buf.writeInt(packet.teamChunkLimits().size());
         for (Map.Entry<UUID, Integer> e : packet.teamChunkLimits().entrySet()) {
@@ -87,7 +91,11 @@ public record SyncClaimShopPacket(
             int teamColor = buf.readInt();
             map.put(new ChunkPos(x, z), new ClaimShopEntry(price, shopTeamName, sellerUUID, teamColor));
         }
-        ItemStack baseCost = readItemStack(buf);
+        Map<ResourceLocation, ItemStack> baseCosts = new HashMap<>();
+        int bcSize = buf.readInt();
+        for (int i = 0; i < bcSize; i++) {
+            baseCosts.put(buf.readResourceLocation(), readItemStack(buf));
+        }
 
         int limitSize = buf.readInt();
         Map<UUID, Integer> limits = new HashMap<>();
@@ -107,12 +115,12 @@ public record SyncClaimShopPacket(
             bought.put(shopId, inner);
         }
 
-        return new SyncClaimShopPacket(dimension, map, baseCost, limits, bought);
+        return new SyncClaimShopPacket(dimension, map, baseCosts, limits, bought);
     }
 
     public static void handle(SyncClaimShopPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> ClientClaimShopData.update(
-                packet.dimension(), packet.forSaleChunks(), packet.baseCost(),
+                packet.dimension(), packet.forSaleChunks(), packet.baseCosts(),
                 packet.teamChunkLimits(), packet.teamBoughtCounts()));
     }
 

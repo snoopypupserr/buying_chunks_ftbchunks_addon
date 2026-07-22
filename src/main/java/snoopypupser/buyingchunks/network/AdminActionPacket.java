@@ -15,7 +15,8 @@ public record AdminActionPacket(
         UUID teamId,
         String itemId,
         int amount,
-        boolean enabled
+        boolean enabled,
+        String dimension
 ) implements CustomPacketPayload {
 
     public static final byte ACTION_SET_BASE_COST = 0;
@@ -35,6 +36,7 @@ public record AdminActionPacket(
     public static final byte ACTION_SET_PRIVACY_PROPERTY = 15;
 
     public static final UUID NO_TEAM = new UUID(0, 0);
+    public static final String NO_DIMENSION = "";
 
     public static final CustomPacketPayload.Type<AdminActionPacket> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(BuyingChunks.MOD_ID, "admin_action"));
@@ -48,6 +50,7 @@ public record AdminActionPacket(
         buf.writeUtf(packet.itemId());
         buf.writeInt(packet.amount());
         buf.writeBoolean(packet.enabled());
+        buf.writeUtf(packet.dimension());
     }
 
     private static AdminActionPacket decode(FriendlyByteBuf buf) {
@@ -56,7 +59,8 @@ public record AdminActionPacket(
         String itemId = buf.readUtf();
         int amount = buf.readInt();
         boolean enabled = buf.readBoolean();
-        return new AdminActionPacket(actionType, teamId, itemId, amount, enabled);
+        String dimension = buf.readUtf();
+        return new AdminActionPacket(actionType, teamId, itemId, amount, enabled, dimension);
     }
 
     public static void handle(AdminActionPacket packet, IPayloadContext context) {

@@ -3,7 +3,6 @@ package snoopypupser.buyingchunks.claimshop;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -13,7 +12,7 @@ import java.util.*;
 public class ClientClaimShopData {
 
     private static Map<ResourceLocation, Map<ChunkPos, ClaimShopEntry>> forSaleChunks = new HashMap<>();
-    private static ItemStack baseCost = ItemStack.EMPTY;
+    private static Map<ResourceLocation, ItemStack> baseCosts = new HashMap<>();
     private static boolean dirty = false;
     private static Runnable onUpdateCallback = null;
 
@@ -28,12 +27,10 @@ public class ClientClaimShopData {
         onUpdateCallback = null;
     }
 
-    public static void update(ResourceLocation dimension, Map<ChunkPos, ClaimShopEntry> data, ItemStack newBaseCost,
+    public static void update(ResourceLocation dimension, Map<ChunkPos, ClaimShopEntry> data, Map<ResourceLocation, ItemStack> newBaseCosts,
                               Map<UUID, Integer> limits, Map<UUID, Map<UUID, Integer>> bought) {
         forSaleChunks.put(dimension, new HashMap<>(data));
-        if (dimension.equals(Level.OVERWORLD.location())) {
-            baseCost = newBaseCost.copy();
-        }
+        baseCosts = new HashMap<>(newBaseCosts);
         dirty = true;
         teamChunkLimits = new HashMap<>(limits);
         teamBoughtCounts = new HashMap<>();
@@ -46,8 +43,12 @@ public class ClientClaimShopData {
         }
     }
 
-    public static ItemStack getBaseCost() {
-        return baseCost;
+    public static ItemStack getBaseCost(ResourceLocation dimension) {
+        return baseCosts.getOrDefault(dimension, ItemStack.EMPTY);
+    }
+
+    public static Map<ResourceLocation, ItemStack> getAllBaseCosts() {
+        return Collections.unmodifiableMap(baseCosts);
     }
 
     public static boolean isForSale(ResourceLocation dimension, ChunkPos pos) {

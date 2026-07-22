@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 
 import java.util.*;
 
@@ -22,7 +23,7 @@ public class ClaimShopData {
     private final Set<UUID> playerIncomeDisabled = new HashSet<>();
     private final Map<UUID, List<ItemStack>> pendingIncome = new HashMap<>();
 
-    private ItemStack baseCost = ItemStack.EMPTY;
+    private final Map<ResourceLocation, ItemStack> baseCosts = new HashMap<>();
 
     private final Set<UUID> autoReclaimTeams = new HashSet<>();
     private final Map<ChunkPos, UUID> chunkOriginalTeam = new HashMap<>();
@@ -60,20 +61,30 @@ public class ClaimShopData {
 
     // --- Base Cost ---
 
-    public boolean hasBaseCost() {
-        return !baseCost.isEmpty();
+    public boolean hasBaseCost(ResourceLocation dimension) {
+        ItemStack cost = baseCosts.get(dimension);
+        return cost != null && !cost.isEmpty();
     }
 
-    public ItemStack getBaseCost() {
-        return baseCost.copy();
+    public boolean hasAnyBaseCost() {
+        return !baseCosts.isEmpty();
     }
 
-    public void setBaseCost(Item item, int amount) {
-        this.baseCost = new ItemStack(item, amount);
+    public ItemStack getBaseCost(ResourceLocation dimension) {
+        ItemStack cost = baseCosts.get(dimension);
+        return cost != null ? cost.copy() : ItemStack.EMPTY;
     }
 
-    public void removeBaseCost() {
-        this.baseCost = ItemStack.EMPTY;
+    public Map<ResourceLocation, ItemStack> getAllBaseCosts() {
+        return Collections.unmodifiableMap(baseCosts);
+    }
+
+    public void setBaseCost(ResourceLocation dimension, Item item, int amount) {
+        baseCosts.put(dimension, new ItemStack(item, amount));
+    }
+
+    public void removeBaseCost(ResourceLocation dimension) {
+        baseCosts.remove(dimension);
     }
 
     // --- Player Sell Setting ---
@@ -322,8 +333,15 @@ public class ClaimShopData {
         }
         tag.put("pendingIncome", pendingList);
 
-        if (!baseCost.isEmpty()) {
-            tag.put("baseCost", saveItemStack(baseCost));
+        if (!baseCosts.isEmpty()) {
+            ListTag baseCostList = new ListTag();
+            for (Map.Entry<ResourceLocation, ItemStack> entry : baseCosts.entrySet()) {
+                CompoundTag bcTag = new CompoundTag();
+                bcTag.putString("dimension", entry.getKey().toString());
+                bcTag.put("cost", saveItemStack(entry.getValue()));
+                baseCostList.add(bcTag);
+            }
+            tag.put("baseCosts", baseCostList);
         }
 
         ListTag autoReclaimList = new ListTag();
@@ -362,7 +380,7 @@ public class ClaimShopData {
         teamBoughtCounts.clear();
         playerIncomeDisabled.clear();
         pendingIncome.clear();
-        baseCost = ItemStack.EMPTY;
+        baseCosts.clear();
         autoReclaimTeams.clear();
         chunkOriginalTeam.clear();
         quickbuyPlayers.clear();
@@ -421,8 +439,15 @@ public class ClaimShopData {
             pendingIncome.computeIfAbsent(sellerUUID, k -> new ArrayList<>()).add(stack);
         }
 
-        if (tag.contains("baseCost")) {
-            baseCost = loadItemStack(tag.getCompound("baseCost"));
+        if (tag.contains("baseCosts")) {
+            ListTag baseCostList = tag.getList("baseCosts", Tag.TAG_COMPOUND);
+            for (int i = 0; i < baseCostList.size(); i++) {
+                CompoundTag bcTag = baseCostList.getCompound(i);
+                ResourceLocation dim = ResourceLocation.parse(bcTag.getString("dimension"));
+                baseCosts.put(dim, loadItemStack(bcTag.getCompound("cost")));
+            }
+        } else if (tag.contains("baseCost")) {
+            baseCosts.put(Level.OVERWORLD.location(), loadItemStack(tag.getCompound("baseCost")));
         }
 
         ListTag autoReclaimList = tag.getList("autoReclaimTeams", Tag.TAG_COMPOUND);
