@@ -137,11 +137,13 @@ public class ClientPayloadHandler {
                     if (mc.level == null) return;
                     mc.level.playLocalSound(centerX, baseY + 1, centerZ,
                             SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.PLAYERS, 1.0f, 1.2f, false);
-                    mc.getToasts().addToast(new SystemToast(
-                            new SystemToast.SystemToastId(),
-                            Component.translatable("uc7core.claimshop.toast.purchased.title"),
-                            Component.translatable("uc7core.claimshop.toast.purchased.body", packet.chunkX(), packet.chunkZ())
-                    ));
+                    if (packet.isBuyer()) {
+                        mc.getToasts().addToast(new SystemToast(
+                                new SystemToast.SystemToastId(),
+                                Component.translatable("uc7core.claimshop.toast.purchased.title"),
+                                Component.translatable("uc7core.claimshop.toast.purchased.body", packet.chunkX(), packet.chunkZ())
+                        ));
+                    }
                 });
             });
             animThread.setDaemon(true);

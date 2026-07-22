@@ -76,7 +76,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             if (entry == null) {
                 playGenericError(buyer);
                 Component errMsg = Component.translatable("uc7core.claimshop.error.notforsale");
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
@@ -90,7 +89,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                         price.getCount(),
                         price.getItem().getDescription().getString()
                 );
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
@@ -99,7 +97,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             if (buyerTeamOpt.isEmpty()) {
                 playGenericError(buyer);
                 Component errMsg = Component.translatable("uc7core.claimshop.error.noteam");
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
@@ -108,7 +105,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             if (buyerTeam.isServerTeam()) {
                 playGenericError(buyer);
                 Component errMsg = Component.translatable("uc7core.claimshop.error.serverbuyerteam");
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
@@ -116,7 +112,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             if (entry.getSellerUUID().equals(buyer.getUUID())) {
                 playGenericError(buyer);
                 Component errMsg = Component.translatable("uc7core.claimshop.error.ownchunk");
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 return;
             }
@@ -131,7 +126,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                 if (buyerTeam.getId().equals(shopTeamId)) {
                     playGenericError(buyer);
                     Component errMsg = Component.translatable("uc7core.claimshop.error.ownteamchunk");
-                    buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                     PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                     return;
                 }
@@ -144,7 +138,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
                             limit,
                             entry.getShopTeamName()
                     );
-                    buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                     PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                     return;
                 }
@@ -156,7 +149,6 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             if (existingChunk == null) {
                 playGenericError(buyer);
                 Component errMsg = Component.translatable("uc7core.claimshop.error.notclaimed");
-                buyer.sendSystemMessage(BuyingChunks.prefix(errMsg));
                 PacketDistributor.sendToPlayer(buyer, new BuyErrorPacket(Component.Serializer.toJson(errMsg, registry)));
                 savedData.getData().removeFromSale(pos);
                 savedData.setDirty();
@@ -224,12 +216,13 @@ public record BuyChunkPacket(int chunkX, int chunkZ) implements CustomPacketPayl
             ClaimShopSync.syncToAll(buyer.getServer());
             playSuccess(buyer);
 
-            PurchaseEffectPacket effectPacket = new PurchaseEffectPacket(pos.x, pos.z, entry.getTeamColor());
             double cx = pos.x * 16 + 8;
             double cz = pos.z * 16 + 8;
+            PurchaseEffectPacket buyerEffect = new PurchaseEffectPacket(pos.x, pos.z, entry.getTeamColor(), true);
+            PurchaseEffectPacket spectatorEffect = new PurchaseEffectPacket(pos.x, pos.z, entry.getTeamColor(), false);
             for (ServerPlayer p : level.players()) {
                 if (p.distanceToSqr(cx, p.getY(), cz) < 64 * 64) {
-                    PacketDistributor.sendToPlayer(p, effectPacket);
+                    PacketDistributor.sendToPlayer(p, p.equals(buyer) ? buyerEffect : spectatorEffect);
                 }
             }
 
