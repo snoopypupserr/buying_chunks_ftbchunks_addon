@@ -19,12 +19,28 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.neoforge.network.PacketDistributor;
 import snoopypupser.buyingchunks.network.ListingToastPacket;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClaimShopEventHandler {
 
     private static final UUID NO_SELLER = new UUID(0, 0);
+
+    private static final Map<UUID, TeamPriceAccumulator> pendingTeamPriceMessages = new ConcurrentHashMap<>();
+
+    private static class TeamPriceAccumulator {
+        final ServerPlayer player;
+        final ItemStack price;
+        int paidChunks = 0;
+        boolean soundScheduled = false;
+
+        TeamPriceAccumulator(ServerPlayer player, ItemStack price) {
+            this.player = player;
+            this.price = price.copy();
+        }
+    }
 
     public void register() {
         ClaimedChunkEvent.AFTER_CLAIM.register(this::onChunkClaimed);
@@ -172,11 +188,41 @@ public class ClaimShopEventHandler {
         BuyingChunks.LOGGER.info("CLAIM: Removed {}x {} from player {}.",
                 price.getCount(), price.getItem().getDescriptionId(), player.getGameProfile().getName());
 
-        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
-                "uc7core.claimshop.teamprice.paid",
-                price.getCount(),
-                price.getItem().getDescription().getString()
-        )));
+        TeamPriceAccumulator acc = pendingTeamPriceMessages.computeIfAbsent(
+                player.getUUID(), k -> new TeamPriceAccumulator(player, price)
+        );
+        acc.paidChunks++;
+
+        if (!acc.soundScheduled) {
+            acc.soundScheduled = true;
+            player.getServer().execute(() -> {
+                TeamPriceAccumulator finalAcc = pendingTeamPriceMessages.remove(player.getUUID());
+                if (finalAcc == null) return;
+
+                int totalCost = finalAcc.paidChunks * finalAcc.price.getCount();
+
+                if (finalAcc.paidChunks > 0) {
+                    player.level().playSound(null, player.blockPosition(),
+                            net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
+                            net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.0f);
+
+                    if (finalAcc.paidChunks == 1) {
+                        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
+                                "uc7core.claimshop.teamprice.paid",
+                                finalAcc.price.getCount(),
+                                finalAcc.price.getItem().getDescription().getString()
+                        )));
+                    } else {
+                        player.sendSystemMessage(BuyingChunks.prefix(Component.translatable(
+                                "uc7core.claimshop.teamprice.paid.bulk",
+                                finalAcc.paidChunks,
+                                totalCost,
+                                finalAcc.price.getItem().getDescription().getString()
+                        )));
+                    }
+                }
+            });
+        }
     }
 
     private boolean hasEnoughItems(ServerPlayer player, ItemStack required) {
