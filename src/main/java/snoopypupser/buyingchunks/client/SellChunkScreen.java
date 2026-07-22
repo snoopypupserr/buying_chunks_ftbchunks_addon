@@ -72,7 +72,7 @@ public class SellChunkScreen extends BaseAdminScreen {
         cw = Math.max(cw, BTN_W + 10); cw = Math.max(cw, 200);
         bw = cw + PAD * 2 + 10;
         bh = PAD + BTN_H + GAP_BACK_TITLE + lh + GAP_TITLE_DIVIDER + 1 + GAP_DIVIDER_CONTENT
-                + (alreadyForSale ? lh * 3 + 6 : lh + 2) // status area
+                + (alreadyForSale ? lh * 3 + 6 : lh + 2)
                 + GAP_LABEL_FIELD + FIELD_H + GAP_FIELD_NEXT
                 + lh + GAP_LABEL_FIELD + FIELD_H + GAP_CONTENT_BTN + BTN_H + PAD;
         computeTopSection(lh);
