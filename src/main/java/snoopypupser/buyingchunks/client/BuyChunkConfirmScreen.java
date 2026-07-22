@@ -78,7 +78,7 @@ public class BuyChunkConfirmScreen extends Screen {
             playerItemCount = countItems(mc.player, entry.getPrice());
             canAfford = playerItemCount >= entry.getPrice().getCount();
 
-            ItemStack baseCost = ClientClaimShopData.getBaseCost();
+            ItemStack baseCost = ClientClaimShopData.getBaseCost(mc.level.dimension().location());
             if (baseCost != null && !baseCost.isEmpty()) {
                 canAfford = canAfford && countItems(mc.player, baseCost) >= baseCost.getCount();
             }

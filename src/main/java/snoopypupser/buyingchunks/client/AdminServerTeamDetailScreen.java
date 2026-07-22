@@ -350,7 +350,7 @@ public class AdminServerTeamDetailScreen extends BaseAdminScreen {
         String key = BOOL_KEYS[index];
         boolean current = readBoolProp(key);
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_SET_BOOL_PROPERTY, team.getId(), key, 0, !current));
+                AdminActionPacket.ACTION_SET_BOOL_PROPERTY, team.getId(), key, 0, !current, AdminActionPacket.NO_DIMENSION));
     }
 
     private void cyclePrivacyProp(int index) {
@@ -359,7 +359,7 @@ public class AdminServerTeamDetailScreen extends BaseAdminScreen {
         int nextOrd = (current.ordinal() + 1) % PRIVACY_VALUES.length;
         PrivacyMode next = PRIVACY_VALUES[nextOrd];
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_SET_PRIVACY_PROPERTY, team.getId(), key + "=" + next.name(), 0, false));
+                AdminActionPacket.ACTION_SET_PRIVACY_PROPERTY, team.getId(), key + "=" + next.name(), 0, false, AdminActionPacket.NO_DIMENSION));
     }
 
     // --- Team property actions ---
@@ -370,7 +370,7 @@ public class AdminServerTeamDetailScreen extends BaseAdminScreen {
             try {
                 int rgb = Integer.parseInt(hex, 16);
                 PacketDistributor.sendToServer(new AdminActionPacket(
-                        AdminActionPacket.ACTION_UPDATE_TEAM_COLOR, team.getId(), "", rgb, false));
+                        AdminActionPacket.ACTION_UPDATE_TEAM_COLOR, team.getId(), "", rgb, false, AdminActionPacket.NO_DIMENSION));
             } catch (NumberFormatException ignored) {}
         }
     }
@@ -378,7 +378,7 @@ public class AdminServerTeamDetailScreen extends BaseAdminScreen {
     private void doDeleteTeam() {
         String teamName = team.getName().getString();
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_DELETE_SERVER_TEAM, team.getId(), teamName, 0, false));
+                AdminActionPacket.ACTION_DELETE_SERVER_TEAM, team.getId(), teamName, 0, false, AdminActionPacket.NO_DIMENSION));
         previous.openGui();
     }
 }

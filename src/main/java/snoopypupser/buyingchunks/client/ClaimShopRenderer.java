@@ -62,7 +62,7 @@ public class ClaimShopRenderer {
         if (!(mc.screen instanceof dev.ftb.mods.ftblibrary.ui.ScreenWrapper wrapper)) return;
         if (!(wrapper.getGui() instanceof dev.ftb.mods.ftbchunks.client.gui.ChunkScreen chunkScreen)) return;
 
-        ItemStack baseCost = ClientClaimShopData.getBaseCost();
+        ItemStack baseCost = ClientClaimShopData.getBaseCost(mc.level.dimension().location());
         if (baseCost == null || baseCost.isEmpty()) return;
 
         GuiGraphics graphics = event.getGuiGraphics();

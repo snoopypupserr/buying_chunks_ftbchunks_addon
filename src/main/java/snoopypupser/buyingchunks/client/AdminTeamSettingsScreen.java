@@ -409,10 +409,10 @@ public class AdminTeamSettingsScreen extends BaseAdminScreen {
     private void doRemove(UUID id) {
         if (id == null) return;
         switch (mode) {
-            case TEAM_PRICE -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_REMOVE_TEAM_PRICE, id, "", 0, false));
-            case BUY_LIMIT -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_REMOVE_CHUNK_LIMIT, id, "", 0, false));
-            case PLAYER_INCOME -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_PLAYER_INCOME, id, "", 0, !ClientAdminData.isPlayerIncomeEnabled(id)));
-            case AUTO_RECLAIM -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_AUTO_RECLAIM, id, "", 0, !ClientAdminData.isAutoReclaimEnabled(id)));
+            case TEAM_PRICE -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_REMOVE_TEAM_PRICE, id, "", 0, false, AdminActionPacket.NO_DIMENSION));
+            case BUY_LIMIT -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_REMOVE_CHUNK_LIMIT, id, "", 0, false, AdminActionPacket.NO_DIMENSION));
+            case PLAYER_INCOME -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_PLAYER_INCOME, id, "", 0, !ClientAdminData.isPlayerIncomeEnabled(id), AdminActionPacket.NO_DIMENSION));
+            case AUTO_RECLAIM -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_AUTO_RECLAIM, id, "", 0, !ClientAdminData.isAutoReclaimEnabled(id), AdminActionPacket.NO_DIMENSION));
         }
         previous.openGui();
     }
@@ -462,16 +462,16 @@ public class AdminTeamSettingsScreen extends BaseAdminScreen {
             case TEAM_PRICE -> {
                 String itemId = itemField != null ? itemField.getText().trim() : "";
                 if (itemId.isEmpty()) return;
-                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_TEAM_PRICE, selectedTeamId, itemId, amount, false));
+                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_TEAM_PRICE, selectedTeamId, itemId, amount, false, AdminActionPacket.NO_DIMENSION));
             }
-            case BUY_LIMIT -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_CHUNK_LIMIT, selectedTeamId, "", amount, false));
+            case BUY_LIMIT -> PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_CHUNK_LIMIT, selectedTeamId, "", amount, false, AdminActionPacket.NO_DIMENSION));
             case PLAYER_INCOME -> {
                 boolean cur = ClientAdminData.isPlayerIncomeEnabled(selectedTeamId);
-                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_PLAYER_INCOME, selectedTeamId, "", 0, !cur));
+                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_PLAYER_INCOME, selectedTeamId, "", 0, !cur, AdminActionPacket.NO_DIMENSION));
             }
             case AUTO_RECLAIM -> {
                 boolean cur = ClientAdminData.isAutoReclaimEnabled(selectedTeamId);
-                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_AUTO_RECLAIM, selectedTeamId, "", 0, !cur));
+                PacketDistributor.sendToServer(new AdminActionPacket(AdminActionPacket.ACTION_SET_AUTO_RECLAIM, selectedTeamId, "", 0, !cur, AdminActionPacket.NO_DIMENSION));
             }
         }
         previous.openGui();

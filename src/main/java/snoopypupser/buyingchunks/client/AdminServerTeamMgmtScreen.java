@@ -228,13 +228,13 @@ public class AdminServerTeamMgmtScreen extends BaseAdminScreen {
         String name = createNameField.getText().trim();
         if (name.isEmpty()) return;
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_CREATE_SERVER_TEAM, AdminActionPacket.NO_TEAM, name, 0, false));
+                AdminActionPacket.ACTION_CREATE_SERVER_TEAM, AdminActionPacket.NO_TEAM, name, 0, false, AdminActionPacket.NO_DIMENSION));
         createNameField.setText("");
     }
 
     private void doDelete(Team team) {
         String teamName = team.getName().getString();
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_DELETE_SERVER_TEAM, team.getId(), teamName, 0, false));
+                AdminActionPacket.ACTION_DELETE_SERVER_TEAM, team.getId(), teamName, 0, false, AdminActionPacket.NO_DIMENSION));
     }
 }

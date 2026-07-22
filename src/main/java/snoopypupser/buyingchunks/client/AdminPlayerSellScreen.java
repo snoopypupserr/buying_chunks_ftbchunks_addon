@@ -93,7 +93,7 @@ public class AdminPlayerSellScreen extends BaseAdminScreen {
             if (hit(toggleX, toggleY, BTN_W, BTN_H)) {
                 boolean cur = ClientAdminData.hasData() && ClientAdminData.isPlayerSellEnabled();
                 PacketDistributor.sendToServer(new AdminActionPacket(
-                        AdminActionPacket.ACTION_SET_PLAYER_SELL, AdminActionPacket.NO_TEAM, "", 0, !cur));
+                        AdminActionPacket.ACTION_SET_PLAYER_SELL, AdminActionPacket.NO_TEAM, "", 0, !cur, AdminActionPacket.NO_DIMENSION));
                 previous.openGui();
                 return true;
             }

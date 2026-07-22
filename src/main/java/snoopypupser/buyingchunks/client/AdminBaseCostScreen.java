@@ -20,6 +20,12 @@ import snoopypupser.buyingchunks.network.AdminActionPacket;
 public class AdminBaseCostScreen extends BaseAdminScreen {
 
     private static final int BTN_W = 64, PICKER_W = 18;
+    private static final ResourceLocation[] DIMENSIONS = {
+            ResourceLocation.parse("minecraft:overworld"),
+            ResourceLocation.parse("minecraft:the_nether"),
+            ResourceLocation.parse("minecraft:the_end")
+    };
+    private static final String[] DIM_NAMES = {"Overworld", "Nether", "End"};
 
     private final BaseScreen previous;
     private int curY, setX, setY, remX, remY;
@@ -29,7 +35,16 @@ public class AdminBaseCostScreen extends BaseAdminScreen {
     private String pendingItemId = "";
     private String pendingAmount = "1";
 
+    private int selectedTab = 0;
+    private int tabY, tabH;
+    private final int[] tabX = new int[3];
+    private int[] tabW = new int[3];
+
     public AdminBaseCostScreen(BaseScreen previous) { this.previous = previous; }
+
+    private ResourceLocation selectedDimension() {
+        return DIMENSIONS[selectedTab];
+    }
 
     @Override
     public boolean onInit() {
@@ -41,11 +56,14 @@ public class AdminBaseCostScreen extends BaseAdminScreen {
         cw = Math.max(cw, BTN_W * 2 + 10); cw = Math.max(cw, 180);
         bw = cw + PAD * 2 + 10;
         bh = PAD + BTN_H + GAP_BACK_TITLE + lh + GAP_TITLE_DIVIDER + 1 + GAP_DIVIDER_CONTENT
-                + lh + 8 + lh + GAP_LABEL_FIELD + FIELD_H + GAP_FIELD_NEXT
+                + lh + 4 + lh + 8 + lh + GAP_LABEL_FIELD + FIELD_H + GAP_FIELD_NEXT
                 + lh + GAP_LABEL_FIELD + FIELD_H + 8 + lh + GAP_CONTENT_BTN + BTN_H + PAD;
         computeTopSection(lh);
 
-        int y = contentY;
+        tabH = lh + 6;
+        tabY = contentY;
+
+        int y = tabY + tabH + 4;
         curY = y;
         y += lh + 6; itemLabelY = y;
         y += lh + GAP_LABEL_FIELD; itemFieldY = y;
@@ -90,9 +108,29 @@ public class AdminBaseCostScreen extends BaseAdminScreen {
         drawPanel(g, bx, by, bw, bh);
         drawTopSection(g, theme);
 
-        int ix = bx + PAD + 2, lh = theme.getFont().lineHeight;
+        int tabContentW = bw - PAD * 2;
+        int singleTabW = tabContentW / 3;
+        for (int i = 0; i < 3; i++) {
+            tabW[i] = singleTabW;
+            tabX[i] = bx + PAD + i * singleTabW;
+        }
 
-        ItemStack cur = ClientClaimShopData.getBaseCost();
+        for (int i = 0; i < 3; i++) {
+            boolean selected = (i == selectedTab);
+            boolean hover = hit(mx, my, tabX[i], tabY, tabW[i], tabH);
+            int bg = selected ? 0xFF2a4a2a : (hover ? 0xFF2a3a4a : 0xFF1a2a3a);
+            int border = selected ? 0xFF4CAF50 : 0xFF555555;
+            g.fill(tabX[i], tabY, tabX[i] + tabW[i], tabY + tabH, bg);
+            g.fill(tabX[i], tabY + tabH - 1, tabX[i] + tabW[i], tabY + tabH, border);
+            String dimName = DIM_NAMES[i];
+            int textW = theme.getFont().width(dimName);
+            dev.ftb.mods.ftblibrary.icon.Color4I textColor = selected ? dev.ftb.mods.ftblibrary.icon.Color4I.rgb(0x4CAF50) : dev.ftb.mods.ftblibrary.icon.Color4I.rgb(0xAAAAAA);
+            theme.drawString(g, dimName, tabX[i] + (tabW[i] - textW) / 2, tabY + 4, textColor, 0);
+        }
+
+        int ix = bx + PAD + 2;
+
+        ItemStack cur = ClientClaimShopData.getBaseCost(selectedDimension());
         if (cur == null || cur.isEmpty())
             theme.drawString(g, Component.translatable("uc7core.claimshop.admin.basecost.notset").getString(), ix, curY, COL_TEXT, 0);
         else
@@ -137,13 +175,22 @@ public class AdminBaseCostScreen extends BaseAdminScreen {
             if (hit(setX, setY, BTN_W, BTN_H)) { doSet(); return true; }
             if (hit(remX, remY, BTN_W, BTN_H)) { doRemove(); return true; }
             if (hit(pickerX, pickerY, PICKER_W, FIELD_H)) { openItemPicker(); return true; }
+
+            int mx = (int) getMouseX(), my = (int) getMouseY();
+            for (int i = 0; i < 3; i++) {
+                if (hit(mx, my, tabX[i], tabY, tabW[i], tabH)) {
+                    selectedTab = i;
+                    openGui();
+                    return true;
+                }
+            }
         }
         return super.mousePressed(button);
     }
 
     @Override
     protected String getTitleStr() {
-        return Component.translatable("uc7core.claimshop.admin.basecost").getString();
+        return Component.translatable("uc7core.claimshop.admin.basecost").getString() + " — " + DIM_NAMES[selectedTab];
     }
 
     private void doSet() {
@@ -153,13 +200,13 @@ public class AdminBaseCostScreen extends BaseAdminScreen {
         try { a = Integer.parseInt(amountField.getText().trim()); if (a < 1) a = 1; if (a > 64) a = 64; }
         catch (NumberFormatException e) { a = 1; }
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_SET_BASE_COST, AdminActionPacket.NO_TEAM, id, a, false));
+                AdminActionPacket.ACTION_SET_BASE_COST, AdminActionPacket.NO_TEAM, id, a, false, selectedDimension().toString()));
         previous.openGui();
     }
 
     private void doRemove() {
         PacketDistributor.sendToServer(new AdminActionPacket(
-                AdminActionPacket.ACTION_REMOVE_BASE_COST, AdminActionPacket.NO_TEAM, "", 0, false));
+                AdminActionPacket.ACTION_REMOVE_BASE_COST, AdminActionPacket.NO_TEAM, "", 0, false, selectedDimension().toString()));
         previous.openGui();
     }
 

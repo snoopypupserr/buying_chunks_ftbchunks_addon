@@ -112,11 +112,10 @@ public class AdminDashboardScreen extends BaseAdminScreen {
         String getSummary() {
             return switch (idx) {
                 case 0 -> {
-                    ItemStack bc = ClientClaimShopData.getBaseCost();
-                    if (bc == null || bc.isEmpty())
+                    var allCosts = ClientClaimShopData.getAllBaseCosts();
+                    if (allCosts.isEmpty())
                         yield Component.translatable("uc7core.claimshop.admin.basecost.notset").getString();
-                    yield Component.translatable("uc7core.claimshop.admin.basecost.summary",
-                            bc.getCount(), bc.getItem().getDescription().getString()).getString();
+                    yield Component.translatable("uc7core.claimshop.admin.basecost.summary_multi", allCosts.size()).getString();
                 }
                 case 1 -> {
                     boolean e = ClientAdminData.hasData() && ClientAdminData.isPlayerSellEnabled();
