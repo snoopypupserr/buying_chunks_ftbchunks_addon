@@ -23,7 +23,7 @@ import java.util.UUID;
 public class MainDashboardScreen extends BaseAdminScreen {
 
     private static final int PANEL_W = 240;
-    private static final int NUM_ROWS = 4;
+    private static final int NUM_ROWS = 5;
     private static final Color4I COL_GOLD = Color4I.rgb(0xFFD700);
 
     private final SectionRow[] rows = new SectionRow[NUM_ROWS];
@@ -110,8 +110,9 @@ public class MainDashboardScreen extends BaseAdminScreen {
             return switch (idx) {
                 case 0 -> Component.translatable("uc7core.claimshop.dashboard.marketplace").getString();
                 case 1 -> Component.translatable("uc7core.claimshop.dashboard.sell").getString();
-                case 2 -> Component.translatable("uc7core.claimshop.dashboard.mylistings").getString();
-                case 3 -> Component.translatable("uc7core.claimshop.dashboard.quickbuy").getString();
+                case 2 -> Component.translatable("uc7core.claimshop.dashboard.bulksell").getString();
+                case 3 -> Component.translatable("uc7core.claimshop.dashboard.mylistings").getString();
+                case 4 -> Component.translatable("uc7core.claimshop.dashboard.quickbuy").getString();
                 default -> "";
             };
         }
@@ -125,7 +126,8 @@ public class MainDashboardScreen extends BaseAdminScreen {
             return switch (idx) {
                 case 0 -> Component.translatable("uc7core.claimshop.dashboard.marketplace.summary", total).getString();
                 case 1 -> "\u25b6 " + getSellHint(player, dim);
-                case 2 -> {
+                case 2 -> Component.translatable("uc7core.claimshop.dashboard.bulksell.summary").getString();
+                case 3 -> {
                     int c = countMyListings(player);
                     String s = Component.translatable("uc7core.claimshop.dashboard.mylistings.active_count", c).getString();
                     List<ItemStack> income = ClientClaimShopData.getPendingIncome();
@@ -136,7 +138,7 @@ public class MainDashboardScreen extends BaseAdminScreen {
                     }
                     yield s;
                 }
-                case 3 -> ClientClaimShopData.isQuickbuyEnabled()
+                case 4 -> ClientClaimShopData.isQuickbuyEnabled()
                         ? Component.translatable("uc7core.claimshop.admin.enabled_status").getString()
                         : Component.translatable("uc7core.claimshop.admin.disabled_status").getString();
                 default -> null;
@@ -166,8 +168,9 @@ public class MainDashboardScreen extends BaseAdminScreen {
         switch (idx) {
             case 0 -> new MarketplaceScreen(this).openGui();
             case 1 -> new SellChunkScreen(this).openGui();
-            case 2 -> new MyListingsScreen(this).openGui();
-            case 3 -> {
+            case 2 -> new BulkSellScreen(this).openGui();
+            case 3 -> new MyListingsScreen(this).openGui();
+            case 4 -> {
                 closeGui(false);
                 PacketDistributor.sendToServer(new snoopypupser.buyingchunks.network.ToggleQuickbuyPacket());
             }

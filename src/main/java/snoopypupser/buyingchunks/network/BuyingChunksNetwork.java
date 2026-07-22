@@ -90,6 +90,11 @@ public class BuyingChunksNetwork {
                 SellChunkPacket::handle
         );
         registrar.playToServer(
+                BulkSellChunksPacket.TYPE,
+                BulkSellChunksPacket.STREAM_CODEC,
+                BulkSellChunksPacket::handle
+        );
+        registrar.playToServer(
                 RemoveListingPacket.TYPE,
                 RemoveListingPacket.STREAM_CODEC,
                 RemoveListingPacket::handle
@@ -98,6 +103,16 @@ public class BuyingChunksNetwork {
                 ToggleQuickbuyPacket.TYPE,
                 ToggleQuickbuyPacket.STREAM_CODEC,
                 ToggleQuickbuyPacket::handle
+        );
+        registrar.playToServer(
+                RequestClaimedChunksPacket.TYPE,
+                RequestClaimedChunksPacket.STREAM_CODEC,
+                RequestClaimedChunksPacket::handle
+        );
+        registrar.playToClient(
+                ClaimedChunksResponsePacket.TYPE,
+                ClaimedChunksResponsePacket.STREAM_CODEC,
+                ClaimedChunksResponsePacket::handle
         );
 
     }

@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "RegionMapPanelMixin",
-    "GuiMixin"
+    "GuiMixin",
+    "ChunkScreenMixin",
+    "ChunkScreenPanelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

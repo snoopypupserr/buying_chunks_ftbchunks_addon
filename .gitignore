@@ -32,6 +32,10 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Development Reference ###
+previous_version/
+ftbchunks-source/
+
 ### Minecraft Modding ###
 run/
 
